@@ -1,0 +1,4 @@
+# Optional dependencies for screenshot avatar recognition.
+# Core BP app runs with the Python standard library only.
+numpy>=1.26
+opencv-python-headless>=4.8

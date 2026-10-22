@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080c14" />
+  <meta name="description" content="王者荣耀 KPL 职业联赛 BP 决策工作台：英雄 Ban/Pick/胜率、战队历史战绩、搭档概率与实时官方数据同步。" />
+  <title>KPL BP 决策台 · 峡谷博弈</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a101a'/%3E%3Cpath d='M32 8 51 16v14c0 12-8 21-19 26C21 51 13 42 13 30V16z' fill='none' stroke='%23e7b969' stroke-width='3'/%3E%3Cpath d='m22 31 7 7 14-16' fill='none' stroke='%23e7b969' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-blue" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-red" aria-hidden="true"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <a class="brand-home" href="#draft" aria-label="KPL BP 决策台首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48" fill="none">
+            <path d="M24 4 41 11v12.5C41 33.4 34 41.7 24 45 14 41.7 7 33.4 7 23.5V11L24 4Z" stroke="currentColor" stroke-width="2.2"/>
+            <path d="m16 24 5.5 5.5L33 17" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16 11.8 24 8l8 3.8" stroke="currentColor" stroke-width="1.2" opacity=".55"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>KPL <em>BP</em></strong>
+          <small class="brand-tagline">峡谷博弈 · 决策工作台</small>
+        </span>
+      </a>
+      <a class="maker-watermark" href="https://b23.tv/hwlbOK2" target="_blank" rel="noopener noreferrer" title="打开B站@摸鱼の修酱的个人空间">制作者：B站@摸鱼の修酱</a>
+    </div>
+
+    <nav class="main-nav" id="mainNav" aria-label="主导航">
+      <button class="nav-tab" data-view="draft" type="button">BP 工作台</button>
+      <button class="nav-tab" data-view="heroes" type="button">英雄数据</button>
+      <button class="nav-tab" data-view="pairs" type="button">搭档图谱</button>
+      <button class="nav-tab" data-view="teams" type="button">战队战绩</button>
+      <button class="nav-tab" data-view="source" type="button">数据源</button>
+    </nav>
+
+    <div class="header-actions">
+      <a class="header-tool live-link" href="https://pvp.qq.com/cp/kpl2026/index.html#s_top1" target="_blank" rel="noopener noreferrer" title="打开王者荣耀 KPL 官方赛事直播">KPL 官方直播</a>
+      <button class="header-tool update-btn" id="checkUpdateBtn" type="button" title="检查 GitHub 最新版本">
+        <span id="appVersion">v1.1.0</span><em>检查更新</em>
+      </button>
+      <div class="data-status" id="dataStatus" title="官方数据同步状态">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-copy">
+          <strong id="statusText">连接数据中</strong>
+          <small id="statusTime">--</small>
+        </span>
+      </div>
+      <button class="icon-btn refresh-btn" id="refreshBtn" type="button" title="立即同步官方数据" aria-label="立即同步官方数据">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 6.7M20 4v7h-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="season-strip" id="seasonStrip">
+    <div class="season-label">
+      <span class="eyebrow">SEASON</span>
+      <strong>分析赛季</strong>
+    </div>
+    <div class="season-tabs" id="seasonTabs" role="group" aria-label="选择分析赛季">
+      <button type="button" data-season="KPL2026S3">2026 年度总决赛</button>
+      <button type="button" data-season="KPL2026S2">2026 KPL 夏季赛</button>
+      <button type="button" data-season="ALL">两赛季合计</button>
+    </div>
+    <div class="season-meta" id="seasonMeta">
+      <span class="live-indicator"><i></i> OFFICIAL DATA</span>
+      <span id="dataThrough">数据读取中…</span>
+    </div>
+    <div class="sync-progress" id="syncProgress" hidden>
+      <div class="sync-progress-bar" id="syncProgressBar"></div>
+      <span id="syncProgressText">同步中</span>
+    </div>
+  </div>
+
+  <main id="app" class="app-main" aria-live="polite">
+    <section class="boot-screen">
+      <div class="boot-mark">KPL<span>BP</span></div>
+      <div class="boot-loader"><i></i></div>
+      <h1>正在接入官方赛事数据</h1>
+      <p id="bootMessage">读取英雄池、战队战绩与 BP 记录…</p>
+      <div class="boot-progress"><span id="bootProgressBar"></span></div>
+      <small>数据来自腾讯王者荣耀官方赛事中台 · 与王者营地赛事数据同源</small>
+    </section>
+  </main>
+
+  <div id="modalRoot"></div>
+  <div class="toast-stack" id="toastStack" aria-live="assertive" aria-atomic="true"></div>
+  <div class="sr-only" id="liveRegion" aria-live="polite"></div>
+  <noscript><div class="noscript">本工具需要启用 JavaScript 才能运行。</div></noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>

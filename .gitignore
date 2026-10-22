@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.spec
+
+# Packaging
+build/
+release/
+*.exe
+
+# Local runtime data and caches
+data/cache/
+data/status.json
+data/sync.lock
+data/edge-*/
+*.log
