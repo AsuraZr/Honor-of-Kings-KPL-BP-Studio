@@ -4,12 +4,12 @@
 
 **Honor of Kings KPL-BP-Studio** is a local Ban/Pick analysis workbench for the Honor of Kings KPL professional league. It covers the 2026 Grand Finals, the 2026 KPL Summer Split, and combined two-season data, including hero ban/pick/win rates, team records, synergy probabilities, coach-side BP modeling, and incremental synchronization from the official Tencent match API.
 
-- **Version:** v1.2.0
+- **Version:** v1.2.1
 - **GitHub:** <https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
-- **Official KPL live page:** <https://pvp.qq.com/cp/kpl2026/index.html#s_top1>
+- **Official KPL live page:** <https://kpl.qq.com/>
 - **Update fallback:** <https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
 
-**Language support:** use the `EN / 中文` button in the top-right corner to switch between English and Chinese. English mode translates the application interface, navigation, controls, coach panel, update dialogs, and common labels. Official Chinese team names, player names, hero names, and some long source-methodology paragraphs are kept in their original form; this is not a claim of full professional localization.
+**Language support:** use the `EN / 中文` button in the top-right corner to switch between English and Chinese. English mode translates the application interface, controls, coach panel, update dialogs, hero names, and team names. Team names use an English city prefix plus the international club name (for example `Chongqing Wolves` and `Chengdu AG`). Player names remain unchanged as requested. Some long source-methodology paragraphs are hidden in English mode to keep the interface English-only.
 
 **License:** the original source code is source-available under the **PolyForm Noncommercial License 1.0.0**. Commercial use is prohibited. This is not an OSI-approved open-source license. Official KPL data, hero artwork, team logos, and game screenshots remain third-party content and are not covered by this license.
 
@@ -23,10 +23,10 @@
 
 当前随包快照：**176 场系列赛 / 721 局 BP / 133 位英雄 / 18 支战队**，数据覆盖至 2026-10-22 18:00。
 
-**版本：v1.2.0**
+**版本：v1.2.1**
 
 - GitHub 仓库：<https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
-- KPL 官方直播：<https://pvp.qq.com/cp/kpl2026/index.html#s_top1>
+- KPL 官方直播：<https://kpl.qq.com/>
 - 软件顶部“检查更新”会读取 GitHub 最新 Release；如无法更新，请点击备用链接：<https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
 
 ![BP 工作台](docs/preview-draft.png)
