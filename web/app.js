@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.1';
+  const APP_VERSION = '1.2.2';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -297,13 +297,8 @@
     '排行': 'Rankings',
     '支战队': 'teams',
     '场系列赛': 'series',
-    '率': 'Rate',
     '次': 'times',
-    '支': 'teams',
-    '场': 'series',
-    '局': 'games',
-    '位': 'players',
-    '手': 'pick'
+    '支': 'teams'
   };
   const HERO_EN = {
     "鲁班大师": "Luban Master",
