@@ -8,13 +8,302 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.1.0';
+  const APP_VERSION = '1.2.0';
   const GITHUB_OWNER = 'AsuraZr';
-  const GITHUB_REPO = 'KPL-BP-Studio';
+  const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
   const UPDATE_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
   const UPDATE_FALLBACK_URL = 'https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1';
   const KPL_LIVE_URL = 'https://pvp.qq.com/cp/kpl2026/index.html#s_top1';
+
+  const EN_I18N = {
+    '制作者：B站@摸鱼の修酱': 'Creator: Bilibili @摸鱼の修酱',
+    'KPL 官方直播': 'KPL Official Live',
+    '检查更新': 'Check updates',
+    '检查中…': 'Checking…',
+    '已是最新': 'Up to date',
+    '检查失败': 'Check failed',
+    '可更新': 'Update',
+    '已是最新版本': 'You are up to date',
+    '发现新版本': 'Update available',
+    '无法连接 GitHub 检查更新': 'Unable to check for updates',
+    '暂无发布版本': 'No releases yet',
+    '当前版本': 'Current version',
+    '最新版本': 'Latest version',
+    '打开 GitHub 仓库': 'Open GitHub repository',
+    '下载更新': 'Download update',
+    '查看 GitHub 发布页': 'View GitHub release',
+    '如无法更新请点击此处': 'If the update fails, click here',
+    'BP 工作台': 'BP Workbench',
+    '英雄数据': 'Hero Data',
+    '搭档图谱': 'Synergy Map',
+    '战队战绩': 'Team Records',
+    '数据源': 'Data Source',
+    '分析赛季': 'Season',
+    '2026 年度总决赛': '2026 Grand Finals',
+    '2026 KPL 夏季赛': '2026 KPL Summer',
+    '两赛季合计': 'Two Seasons Combined',
+    '数据在线': 'Live',
+    '连接数据中': 'Connecting',
+    '同步中': 'Syncing',
+    '同步中…': 'Syncing…',
+    '数据同步': 'Data sync',
+    'BP 演练室': 'BP Draft Room',
+    '导入 BP': 'Import BP',
+    '复制本局': 'Copy Game',
+    '重置本局': 'Reset Game',
+    '重置系列赛': 'Reset Series',
+    '本局换边': 'Side Swap',
+    '进入下一局': 'Next Game',
+    '完成系列赛': 'Finish Series',
+    '系列赛结束': 'Series Complete',
+    '请先选择本局胜方': 'Select a winner first',
+    '请选择本局胜方': 'Please select the winner',
+    '本局胜方': 'Match Winner',
+    '蓝方': 'Blue',
+    '红方': 'Red',
+    '全局 BP': 'Global BP',
+    '巅峰对决': 'Peak Showdown',
+    'BP 完成': 'BP Complete',
+    '进行中': 'In Progress',
+    '未开始': 'Not Started',
+    '已完成': 'Complete',
+    '本局已确认': 'Game Confirmed',
+    'BP 与胜方已锁定 · 只读': 'BP and winner locked · Read-only',
+    '解锁本局 BP': 'Unlock BP',
+    '只读回看': 'Read-only Review',
+    '返回当前': 'Back to Current',
+    '回看': 'Review',
+    '系列赛': 'Series',
+    '小局': 'Game',
+    '全部小局': 'All Games',
+    '英雄池': 'Hero Pool',
+    '搜索英雄…': 'Search heroes…',
+    '推荐排序': 'Recommended',
+    'BP 热度': 'BP Presence',
+    '胜率优先': 'Win Rate',
+    'Ban 率优先': 'Ban Rate',
+    'Pick 率优先': 'Pick Rate',
+    '全部': 'All',
+    '对抗路': 'Clash Lane',
+    '打野': 'Jungle',
+    '中路': 'Mid Lane',
+    '发育路': 'Gold Lane',
+    '游走': 'Roam',
+    '对抗': 'Clash',
+    '发育': 'Gold',
+    '已 BAN': 'Banned',
+    '蓝方已选': 'Picked by Blue',
+    '红方已选': 'Picked by Red',
+    '己方全局已用': 'Used by your team',
+    '己方曾用': 'Previously used',
+    '同位置已封锁': 'Same-role locked',
+    '本局已确认结束与胜方 · BP 只读': 'Game confirmed · BP read-only',
+    '首轮禁用': 'First Ban Phase',
+    '首轮选人': 'First Pick Phase',
+    '教练席建议': 'Coach Suggestions',
+    'BP 位概率': 'BP Slot Probability',
+    '本赛季': 'This Season',
+    '两赛季合并': 'Two Seasons',
+    '同位置封锁': 'Same-role locked',
+    '已封锁/已选': 'Locked/Picked',
+    '封锁后剩余英雄 BP 率': 'Remaining Hero BP Rate',
+    '概率': 'Probability',
+    '样本': 'Sample',
+    '对位': 'vs',
+    '数据来源': 'Data Source',
+    '数据管道': 'Data Pipeline',
+    '接口与口径': 'API & Methodology',
+    '使用说明': 'Usage',
+    '官方接口': 'Official API',
+    '重新读取快照': 'Reload Snapshot',
+    '立即增量同步': 'Sync Now',
+    '下载快照': 'Download Snapshot',
+    '赛事数据': 'Match Data',
+    '系列赛记录': 'Series Records',
+    '赛后数据': 'Post-Match Data',
+    '选手对位数据': 'Player Matchups',
+    '战队详情': 'Team Details',
+    '英雄详情': 'Hero Details',
+    '最近出场': 'Recent Appearances',
+    '常用英雄': 'Common Heroes',
+    '常用搭档': 'Common Partners',
+    '历史胜率': 'Historical Win Rate',
+    '复制 BP': 'Copy BP',
+    '载入 BO7 工作台': 'Load BO7 Workbench',
+    '关闭': 'Close',
+    '取消': 'Cancel',
+    '确定': 'Confirm',
+    '胜率': 'Win Rate',
+    '出场': 'Games',
+    '经济': 'Gold',
+    '击杀': 'Kills',
+    '死亡': 'Deaths',
+    '助攻': 'Assists',
+    '输出伤害': 'Damage Dealt',
+    '承受伤害': 'Damage Taken',
+    '参团率': 'Kill Participation',
+    '评分': 'Rating',
+    '全队': 'Team',
+    '总经济': 'Total Gold',
+    '比赛时间': 'Duration',
+    '本局': 'Game',
+    '历史 BP': 'Historical BP',
+    '本赛季数据': 'This season',
+    '夏季赛': 'Summer Split',
+    '年度总决赛': 'Grand Finals',
+    '全部英雄': 'All Heroes',
+    '英雄名称': 'Hero',
+    '战队': 'Team',
+    '选手': 'Player',
+    '禁用': 'Ban',
+    '选人': 'Pick',
+    '蓝色方': 'Blue Side',
+    '红色方': 'Red Side',
+    '胜利': 'Win',
+    '失败': 'Loss',
+    '暂无数据': 'No data',
+    '加载中': 'Loading',
+    '加载中…': 'Loading…',
+    '读取中…': 'Loading…',
+    '正在读取赛后数据…': 'Loading post-match data…',
+    '数据加载失败': 'Failed to load data',
+    '网络错误': 'Network error',
+    '复制成功': 'Copied',
+    '复制失败，请手动选择文本': 'Copy failed. Select the text manually.',
+    '已复制': 'Copied',
+    '请选择': 'Please select',
+    '当前': 'Current',
+    '最新': 'Latest',
+    '版本': 'Version',
+    '官方': 'Official',
+    '汇总': 'Derived',
+    '积分榜': 'Standings',
+    '赛程': 'Schedule',
+    '擂台赛': 'Arena',
+    '突围赛': 'Play-in',
+    '淘汰赛': 'Playoffs',
+    '总决赛': 'Grand Final',
+    '胜者组': 'Winners Bracket',
+    '败者组': 'Losers Bracket',
+    '冠军': 'Champion',
+    '亚军': 'Runner-up',
+    '待定': 'TBD',
+    '已结束': 'Finished',
+    '进行中': 'Live',
+    '未开始': 'Upcoming',
+    '比赛': 'Match',
+    '日期': 'Date',
+    '阶段': 'Stage',
+    '比分': 'Score',
+    '结果': 'Result',
+    '排名': 'Rank',
+    '战队名': 'Team',
+    '胜/负': 'W/L',
+    '净胜分': 'Net Wins',
+    '积分': 'Points',
+    '演练室': 'Draft Room',
+    '更新': 'Updated',
+    '数据截至': 'Data through',
+    '来源': 'Source',
+    '战绩': 'Records',
+    '英雄': 'Hero',
+    '位英雄': 'heroes',
+    '位选手': 'players',
+    '场系列赛': 'series',
+    '个英雄': 'heroes',
+    '全部战队': 'All Teams',
+    '全部英雄': 'All Heroes',
+    '当前版本': 'Current version',
+    '最新版本': 'Latest version',
+    '版本信息': 'Version',
+    '软件版本': 'Version',
+    '检查更新失败': 'Update check failed',
+    '暂无可用样本': 'No samples',
+    '该范围暂无此位置样本': 'No samples for this slot in this range',
+    '暂无对位全局 BP 样本': 'No head-to-head Global BP samples',
+    '封锁后剩余英雄': 'Remaining heroes',
+    '蓝色方禁用': 'Blue Ban',
+    '红色方禁用': 'Red Ban',
+    '蓝色方选人': 'Blue Pick',
+    '红色方选人': 'Red Pick',
+    '本局进度': 'Progress',
+    '模式': 'Mode',
+    '蓝方': 'Blue',
+    '红方': 'Red',
+    '英雄BP': 'Hero BP',
+    '分路': 'Role',
+    '打野路': 'Jungle',
+    '对抗路': 'Clash Lane',
+    '中路': 'Mid Lane',
+    '发育路': 'Gold Lane',
+    '游走': 'Roam'
+  };
+  const EN_I18N_ENTRIES = Object.entries(EN_I18N).sort((a, b) => b[0].length - a[0].length);
+  const EN_PATTERNS = [
+    [/第\s*(\d+)\s*\/\s*(\d+)\s*局/g, 'Game $1 / $2'],
+    [/第\s*(\d+)\s*局/g, 'Game $1'],
+    [/(\d+)\s*局/g, '$1 games'],
+    [/载入\s*BO(\d+)\s*工作台/g, 'Load BO$1 Workbench'],
+    [/全局\s*P(\d+)/g, 'Global P$1'],
+    [/(\d+)\s*场/g, '$1 series'],
+    [/(\d+)\s*位英雄/g, '$1 heroes'],
+    [/(\d+)\s*位选手/g, '$1 players']
+  ];
+
+  function translateEnglishText(value) {
+    let text = String(value ?? '');
+    if (!text || state.lang !== 'en') return text;
+    for (const [zh, en] of EN_I18N_ENTRIES) {
+      if (text.includes(zh)) text = text.split(zh).join(en);
+    }
+    for (const [pattern, replacement] of EN_PATTERNS) text = text.replace(pattern, replacement);
+    return text;
+  }
+
+  function applyLanguage(root = document.body) {
+    if (!root || state.lang !== 'en') return;
+    document.documentElement.lang = 'en';
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (parent.closest('script, style, textarea, pre, code')) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const translated = translateEnglishText(node.nodeValue);
+      if (translated !== node.nodeValue) node.nodeValue = translated;
+    }
+    if (root.querySelectorAll) {
+      root.querySelectorAll('[title], [placeholder], [aria-label]').forEach((element) => {
+        for (const attr of ['title', 'placeholder', 'aria-label']) {
+          const value = element.getAttribute(attr);
+          if (!value) continue;
+          const translated = translateEnglishText(value);
+          if (translated !== value) element.setAttribute(attr, translated);
+        }
+      });
+    }
+  }
+
+  function setLanguage(lang) {
+    state.lang = lang === 'en' ? 'en' : 'zh';
+    persistPrefs();
+    window.location.reload();
+  }
+
+  function renderLanguageToggle() {
+    const button = $('#langToggle');
+    if (!button) return;
+    button.textContent = state.lang === 'en' ? '中文' : 'EN';
+    button.title = state.lang === 'en' ? '切换到中文' : 'Switch to English';
+    button.setAttribute('aria-label', button.title);
+    document.documentElement.lang = state.lang === 'en' ? 'en' : 'zh-CN';
+  }
   const BO_OPTIONS = [1, 3, 5, 7, 9];
   const ROLE_ORDER = ['对抗路', '打野', '中路', '发育路', '游走'];
   const ROLE_SHORT = { 对抗路: '对抗', 打野: '打野', 中路: '中路', 发育路: '发育', 游走: '游走' };
@@ -72,6 +361,7 @@
     ready: false,
     loadingData: false,
     view: 'draft',
+    lang: 'zh',
     season: SEASONS[0],
     heroMap: new Map(),
     yuanliuIds: new Set(),
@@ -320,6 +610,7 @@
     const hashView = parseHash();
     if (hashView) state.view = hashView;
     else if (VIEWS.has(saved.view)) state.view = saved.view;
+    if (saved.lang === 'en' || saved.lang === 'zh') state.lang = saved.lang;
     if (saved.season === ALL || SEASONS.includes(saved.season)) state.season = saved.season;
     if (state.season !== ALL) {
       state.standingsSeason = state.season;
@@ -344,6 +635,7 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         view: state.view,
+        lang: state.lang,
         season: state.season,
         drafts: state.drafts,
         heroTableSort: state.heroTableSort,
@@ -1382,6 +1674,8 @@
         progress.hidden = true;
       }
     }
+    applyLanguage(document.body);
+    renderLanguageToggle();
   }
 
   /* ---------------------------------------------------------
@@ -1440,7 +1734,7 @@
     if (!stack) return;
     const node = document.createElement('div');
     node.className = `toast ${type}`;
-    node.textContent = message;
+    node.textContent = translateEnglishText(message);
     stack.appendChild(node);
     requestAnimationFrame(() => node.classList.add('show'));
     window.setTimeout(() => {
@@ -1612,6 +1906,8 @@
     else if (state.view === 'pairs') renderPairsPage(app);
     else if (state.view === 'teams') renderTeamsPage(app);
     else renderSourcePage(app);
+    applyLanguage(document.body);
+    renderLanguageToggle();
   }
 
   /* ---------------------------------------------------------
@@ -1634,6 +1930,7 @@
       startSyncRequest(false).catch((error) => toast(`同步请求失败：${error.message || error}`, 'error'));
     });
     $('#checkUpdateBtn')?.addEventListener('click', () => checkAppUpdate());
+    $('#langToggle')?.addEventListener('click', () => setLanguage(state.lang === 'en' ? 'zh' : 'en'));
     window.addEventListener('hashchange', () => {
       const next = parseHash();
       if (next && next !== state.view) {
@@ -1672,9 +1969,13 @@
     const versionLabel = $('#appVersion');
     if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
     $('.live-link')?.setAttribute('href', KPL_LIVE_URL);
+    renderLanguageToggle();
+    applyLanguage(document.body);
     updateChrome();
     loadData();
     window.setInterval(checkForUpdates, 20000);
+    window.setTimeout(() => checkAppUpdate({ silent: true }), 1800);
+    window.setInterval(() => checkAppUpdate({ silent: true }), 6 * 60 * 60 * 1000);
   }
 
   /* ---------------------------------------------------------
@@ -3203,6 +3504,7 @@
     renderCoachPanel();
     renderDraftGrid();
     renderDraftAnalysis();
+    applyLanguage($('#draftPage'));
     window.requestAnimationFrame(syncDraftPoolHeight);
   }
 
@@ -5242,6 +5544,7 @@
       if (event.target === backdrop) closeModal();
     });
     $$('[data-modal-close]', root).forEach((button) => button.addEventListener('click', closeModal));
+    applyLanguage(root);
     window.requestAnimationFrame(() => $('[data-modal-close]', root)?.focus());
   }
 
@@ -5263,12 +5566,29 @@
     return `<div class="update-fallback"><a href="${esc(UPDATE_FALLBACK_URL)}" target="_blank" rel="noopener noreferrer">如无法更新请点击此处</a></div>`;
   }
 
-  async function checkAppUpdate() {
+  function updateBadgeText(status, latest = '') {
+    if (status === 'checking') return state.lang === 'en' ? 'Checking…' : '检查中…';
+    if (status === 'latest') return state.lang === 'en' ? 'Up to date' : '已是最新';
+    if (status === 'update') return state.lang === 'en' ? `Update ${latest}` : `可更新 ${latest}`;
+    if (status === 'error') return state.lang === 'en' ? 'Check failed' : '检查失败';
+    return state.lang === 'en' ? 'Check updates' : '检查更新';
+  }
+
+  function setUpdateBadge(status, latest = '') {
+    const label = $('#checkUpdateBtn')?.querySelector('em');
+    if (label) label.textContent = updateBadgeText(status, latest);
+    const button = $('#checkUpdateBtn');
+    if (button) button.dataset.updateStatus = status;
+  }
+
+  async function checkAppUpdate({ silent = false } = {}) {
     const button = $('#checkUpdateBtn');
     const label = button?.querySelector('em');
     if (button?.disabled) return;
-    if (button) button.disabled = true;
-    if (label) label.textContent = '检查中…';
+    if (!silent) {
+      if (button) button.disabled = true;
+      if (label) label.textContent = updateBadgeText('checking');
+    }
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 12000);
     try {
@@ -5278,11 +5598,14 @@
         signal: controller.signal
       });
       if (response.status === 404) {
-        showModal(`<div class="modal-body update-modal">
-          <div class="import-head"><div><div class="eyebrow">UPDATE CHECK</div><h2>暂无发布版本</h2><p>GitHub 仓库还没有发布 Release，请先访问仓库查看。</p></div></div>
-          <div class="update-actions"><a class="btn primary" href="${esc(GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开 GitHub 仓库</a></div>
-          ${updateFallbackHtml()}
-        </div>`, '检查更新');
+        setUpdateBadge('error');
+        if (!silent) {
+          showModal(`<div class="modal-body update-modal">
+            <div class="import-head"><div><div class="eyebrow">UPDATE CHECK</div><h2>暂无发布版本</h2><p>GitHub 仓库还没有发布 Release，请先访问仓库查看。</p></div></div>
+            <div class="update-actions"><a class="btn primary" href="${esc(GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开 GitHub 仓库</a></div>
+            ${updateFallbackHtml()}
+          </div>`, '检查更新');
+        }
         return;
       }
       if (!response.ok) throw new Error(`GitHub ${response.status}`);
@@ -5292,32 +5615,45 @@
       const exeAsset = assets.find((asset) => /\.exe$/i.test(asset.name || '')) || assets[0];
       const downloadUrl = exeAsset?.browser_download_url || release.html_url || GITHUB_REPO_URL;
       if (latest && isNewerVersion(latest, APP_VERSION)) {
-        showModal(`<div class="modal-body update-modal">
-          <div class="import-head"><div><div class="eyebrow">UPDATE AVAILABLE</div><h2>发现新版本 ${esc(latest)}</h2><p>当前版本 v${esc(APP_VERSION)} · 最新版本 ${esc(latest)}</p></div></div>
-          <div class="update-notes">${esc((release.body || '包含最新功能与数据修复。').slice(0, 500))}</div>
-          <div class="update-actions">
-            <a class="btn primary" href="${esc(downloadUrl)}" target="_blank" rel="noopener noreferrer">下载更新</a>
-            <a class="btn ghost" href="${esc(release.html_url || GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">查看 GitHub 发布页</a>
-          </div>
-          ${updateFallbackHtml()}
-        </div>`, '检查更新');
+        setUpdateBadge('update', latest);
+        if (silent) {
+          if (!state.updateNoticeShown) {
+            state.updateNoticeShown = true;
+            toast(`发现新版本 ${latest}，可点击顶部“检查更新”下载`, 'success', 5000);
+          }
+        } else {
+          showModal(`<div class="modal-body update-modal">
+            <div class="import-head"><div><div class="eyebrow">UPDATE AVAILABLE</div><h2>发现新版本 ${esc(latest)}</h2><p>当前版本 v${esc(APP_VERSION)} · 最新版本 ${esc(latest)}</p></div></div>
+            <div class="update-notes">${esc((release.body || '包含最新功能与数据修复。').slice(0, 500))}</div>
+            <div class="update-actions">
+              <a class="btn primary" href="${esc(downloadUrl)}" target="_blank" rel="noopener noreferrer">下载更新</a>
+              <a class="btn ghost" href="${esc(release.html_url || GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">查看 GitHub 发布页</a>
+            </div>
+            ${updateFallbackHtml()}
+          </div>`, '检查更新');
+        }
       } else {
+        setUpdateBadge('latest');
+        if (!silent) {
+          showModal(`<div class="modal-body update-modal">
+            <div class="import-head"><div><div class="eyebrow">UP TO DATE</div><h2>已是最新版本</h2><p>当前 v${esc(APP_VERSION)}${latest ? ` · GitHub 最新 ${esc(latest)}` : ''}</p></div></div>
+            <div class="update-actions"><a class="btn ghost" href="${esc(GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开 GitHub 仓库</a></div>
+            ${updateFallbackHtml()}
+          </div>`, '检查更新');
+        }
+      }
+    } catch (error) {
+      setUpdateBadge('error');
+      if (!silent) {
         showModal(`<div class="modal-body update-modal">
-          <div class="import-head"><div><div class="eyebrow">UP TO DATE</div><h2>已是最新版本</h2><p>当前 v${esc(APP_VERSION)}${latest ? ` · GitHub 最新 ${esc(latest)}` : ''}</p></div></div>
+          <div class="import-head"><div><div class="eyebrow">UPDATE CHECK FAILED</div><h2>无法连接 GitHub 检查更新</h2><p>${esc(error?.name === 'AbortError' ? '连接超时。' : '当前网络无法访问 GitHub。')} 你仍可手动打开仓库或使用备用更新说明。</p></div></div>
           <div class="update-actions"><a class="btn ghost" href="${esc(GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开 GitHub 仓库</a></div>
           ${updateFallbackHtml()}
         </div>`, '检查更新');
       }
-    } catch (error) {
-      showModal(`<div class="modal-body update-modal">
-        <div class="import-head"><div><div class="eyebrow">UPDATE CHECK FAILED</div><h2>无法连接 GitHub 检查更新</h2><p>${esc(error?.name === 'AbortError' ? '连接超时。' : '当前网络无法访问 GitHub。')} 你仍可手动打开仓库或使用备用更新说明。</p></div></div>
-        <div class="update-actions"><a class="btn ghost" href="${esc(GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开 GitHub 仓库</a></div>
-        ${updateFallbackHtml()}
-      </div>`, '检查更新');
     } finally {
       window.clearTimeout(timer);
-      if (button) button.disabled = false;
-      if (label) label.textContent = '检查更新';
+      if (!silent && button) button.disabled = false;
     }
   }
 
@@ -5701,6 +6037,7 @@
         <div class="section-label"><h3>常用搭档</h3><span>同队同场 ≥2 局</span></div>
         <div class="mini-list">${duoRows}</div>
       </div>`;
+    applyLanguage(body);
 
     $$('[data-team-hero]', body).forEach((row) => {
       const pickHero = () => {
@@ -6156,6 +6493,7 @@
     }
     if (modal.token !== token || !$('#seriesDetailContent')) return;
     content.innerHTML = renderSeriesBattle(detail, series, battle);
+    applyLanguage(content);
   }
 
   function openSeriesDetailModal(seriesId, gameIndex = 0) {
