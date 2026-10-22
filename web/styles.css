@@ -185,6 +185,7 @@ h1, h2, h3, h4, p { margin: 0; }
 }
 .header-tool:hover { border-color: rgba(232,185,104,.35); color: var(--gold-2); background: rgba(232,185,104,.06); }
 .live-link { color: var(--red-2); }
+.lang-toggle { min-width: 34px; justify-content: center; color: var(--gold-2); font-family: var(--display); font-size: 9px; font-weight: 700; }
 .update-btn span { color: var(--gold-2); font-family: var(--display); }
 .update-btn em { color: var(--dim); font-style: normal; font-size: 8px; }
 .update-btn:disabled { opacity: .6; cursor: wait; }
