@@ -8,13 +8,68 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.4';
+  const APP_VERSION = '1.2.5';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
   const UPDATE_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
   const UPDATE_FALLBACK_URL = 'https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1';
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
+  const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
+  const VERSION_HISTORY = [
+    {
+      version: '1.2.5',
+      date: '2026-10-27',
+      zh: [
+        '小局回放改为 KPL 官方赛事回放页面',
+        '更新后首次进入软件自动弹出历代版本更新内容',
+        '关闭弹窗默认勾选“此版本不再弹出”，下个版本重新提示',
+        '数据源页面新增“版本更新内容”按钮'
+      ],
+      en: [
+        'Battle replays now open the official KPL replay player',
+        'Version history opens automatically after an update',
+        'Closing the dialog dismisses this version by default; the next version prompts again',
+        'Added a Version History button on the Data Source page'
+      ]
+    },
+    {
+      version: '1.2.4',
+      date: '2026-10-27',
+      zh: ['BP 工作台双方均可选择全KPL通用', '系列赛赛后数据关闭后返回战队详情', '每小局新增官方赛事回放链接'],
+      en: ['Both BP sides can use All KPL', 'Series detail returns to team detail', 'Official replay link for each game']
+    },
+    {
+      version: '1.2.3',
+      date: '2026-10-27',
+      zh: ['淘汰赛赛程显示未开赛与进行中比赛', '进行中比赛显示当前比分', '赛果结束后自动入库'],
+      en: ['Knockout schedule shows upcoming and live matches', 'Live score display', 'Results enter the data after the match finishes']
+    },
+    {
+      version: '1.2.2',
+      date: '2026-10-23',
+      zh: ['英文界面完整化', '英雄名使用国际版本英文称呼', '战队名改为英文城市 + 国际俱乐部名'],
+      en: ['Complete English interface', 'International English hero names', 'English city + international club team names']
+    },
+    {
+      version: '1.2.1',
+      date: '2026-10-23',
+      zh: ['中文品牌恢复为 KPL BP 决策台', 'KPL 官方直播链接切换到 kpl.qq.com', '保留自动检查更新'],
+      en: ['Restored the Chinese KPL BP Studio brand', 'Official KPL live link moved to kpl.qq.com', 'Automatic update check retained']
+    },
+    {
+      version: '1.2.0',
+      date: '2026-10-23',
+      zh: ['新增中英双语切换', '新增启动自动检查更新', '仓库更名为 Honor-of-Kings-KPL-BP-Studio', 'README 增加英文说明'],
+      en: ['Chinese/English UI switch', 'Automatic update check on startup', 'Repository renamed to Honor-of-Kings-KPL-BP-Studio', 'English README section']
+    },
+    {
+      version: '1.1.0',
+      date: '2026-10-22',
+      zh: ['BP 工作台、教练推荐与英雄数据', '历史换边胜方、搭档概率、逐局概率', '战队战绩、赛后选手对位', '官方数据自动同步与 GitHub 更新检查'],
+      en: ['BP workbench, coach recommendations, and hero data', 'Side-swapped history, synergy and per-game probabilities', 'Team records and postgame player matchups', 'Automatic official data sync and GitHub update check']
+    }
+  ];
 
   const EN_I18N = {
     '制作者：B站@摸鱼の修酱': 'Creator: Bilibili @MoYu XiuJiang',
@@ -269,6 +324,8 @@
     '当前手': 'Current turn',
     '淘汰赛赛程': 'Knockout Schedule',
     '本局全局回放': 'Full match replay',
+    '官方赛事回放': 'Official match replay',
+    '版本更新内容': 'Version History',
     '晋级下一轮': 'Advance',
     '淘汰': 'Eliminated',
     '官方赛程对阵': 'Official schedule',
@@ -603,6 +660,7 @@
     loadingData: false,
     view: 'draft',
     lang: 'zh',
+    changelogOpen: false,
     season: SEASONS[0],
     heroMap: new Map(),
     yuanliuIds: new Set(),
@@ -2218,6 +2276,7 @@
     window.setInterval(checkForUpdates, 20000);
     window.setTimeout(() => checkAppUpdate({ silent: true }), 1800);
     window.setInterval(() => checkAppUpdate({ silent: true }), 6 * 60 * 60 * 1000);
+    maybeShowChangelog();
   }
 
   /* ---------------------------------------------------------
@@ -5621,6 +5680,65 @@
   /* ---------------------------------------------------------
      Source / methodology page
      --------------------------------------------------------- */
+  function getChangelogSeenVersion() {
+    try {
+      return localStorage.getItem(CHANGELOG_SEEN_KEY) || '';
+    } catch {
+      return '';
+    }
+  }
+
+  function markChangelogSeen() {
+    try {
+      localStorage.setItem(CHANGELOG_SEEN_KEY, APP_VERSION);
+    } catch {
+      /* localStorage may be unavailable in a locked-down browser. */
+    }
+  }
+
+  function openChangelogModal() {
+    if (state.changelogOpen) return;
+    const en = state.lang === 'en';
+    const entries = VERSION_HISTORY.map((entry) => {
+      const current = entry.version === APP_VERSION;
+      const items = (en ? entry.en : entry.zh).map((item) => `<li>${esc(item)}</li>`).join('');
+      return `<section class="changelog-entry ${current ? 'is-current' : ''}">
+        <div class="changelog-entry-head">
+          <b>v${esc(entry.version)}</b>
+          <span>${esc(entry.date)}</span>
+          ${current ? `<em>${en ? 'CURRENT' : '当前版本'}</em>` : ''}
+        </div>
+        <ul>${items}</ul>
+      </section>`;
+    }).join('');
+    state.changelogOpen = true;
+    showModal(`<div class="modal-body changelog-modal">
+      <div class="changelog-head">
+        <div>
+          <div class="eyebrow">VERSION HISTORY · RELEASE NOTES</div>
+          <h2>${en ? 'Version History' : '版本更新内容'}</h2>
+          <p>${en ? 'Changes in the current and previous versions.' : '当前版本与历代版本的主要更新内容。'}</p>
+        </div>
+        <span class="tag gold">v${esc(APP_VERSION)}</span>
+      </div>
+      <div class="changelog-list">${entries}</div>
+      <div class="changelog-footer">
+        <label class="changelog-dismiss">
+          <input id="changelogDismiss" type="checkbox" checked />
+          <span>${en ? 'Do not show this version again' : '此版本不再弹出'}</span>
+        </label>
+        <button class="btn primary sm" type="button" data-modal-close>${en ? 'Close' : '关闭'}</button>
+      </div>
+    </div>`, en ? 'Version History' : '版本更新内容');
+  }
+
+  function maybeShowChangelog() {
+    if (getChangelogSeenVersion() === APP_VERSION) return;
+    window.setTimeout(() => {
+      if (!state.changelogOpen && !$('#modalRoot')?.innerHTML.trim()) openChangelogModal();
+    }, 1200);
+  }
+
   function openLegalNoticeModal() {
     showModal(`<div class="modal-body legal-modal">
       <div class="import-head">
@@ -5679,6 +5797,7 @@
           </div>
           <div class="head-actions">
             <a class="btn ghost" href="${KPL_LIVE_URL}" target="_blank" rel="noopener noreferrer">KPL 官方直播</a>
+            <button class="btn ghost" id="sourceChangelogBtn" type="button">版本更新内容</button>
             <button class="btn ghost" id="sourceUpdateBtn" type="button">v${APP_VERSION} · 检查更新</button>
             <button class="btn primary" id="sourceSyncBtn" type="button" ${running ? 'disabled' : ''}>${ICONS.refresh} ${running ? '同步中…' : '立即增量同步'}</button>
             <a class="btn ghost" href="/api/data" download="kpl-snapshot.json">${ICONS.download} 下载快照</a>
@@ -5769,6 +5888,7 @@
 
     $('#sourceSyncBtn')?.addEventListener('click', () => startSyncRequest(false).catch((error) => toast(`同步请求失败：${error.message || error}`, 'error')));
     $('#sourceReloadBtn')?.addEventListener('click', () => loadData({ silent: true }));
+    $('#sourceChangelogBtn')?.addEventListener('click', openChangelogModal);
     $('#sourceUpdateBtn')?.addEventListener('click', () => checkAppUpdate());
     $('#legalNoticeBtn')?.addEventListener('click', openLegalNoticeModal);
   }
@@ -5906,6 +6026,8 @@
   }
 
   function closeModal() {
+    const changelogWasOpen = state.changelogOpen;
+    const changelogDismiss = changelogWasOpen && ($('#changelogDismiss')?.checked ?? true);
     const root = $('#modalRoot');
     if (root) root.innerHTML = '';
     document.body.style.overflow = '';
@@ -5918,6 +6040,8 @@
     state.heroModal = null;
     state.teamModal = null;
     state.seriesModal = null;
+    state.changelogOpen = false;
+    if (changelogWasOpen && changelogDismiss) markChangelogSeen();
     if (state.modalReturnFocus instanceof HTMLElement) {
       state.modalReturnFocus.focus();
       state.modalReturnFocus = null;
@@ -6716,7 +6840,7 @@
           ${team2 ? teamImage(team2, 'post-team-logo', team2.name) : ''}
         </div>
       </div>
-      ${replayUrl ? `<div class="postgame-replay-row"><a class="postgame-replay" href="${esc(replayUrl)}" target="_blank" rel="noopener noreferrer">${ICONS.external}<span>本局全局回放</span></a></div>` : ''}
+      ${replayUrl ? `<div class="postgame-replay-row"><a class="postgame-replay" href="${esc(replayUrl)}" target="_blank" rel="noopener noreferrer">${ICONS.external}<span>官方赛事回放</span></a></div>` : ''}
       ${renderPostgameComparison(detail, buckets, team1, team2)}
       <div class="postgame-table-head"><span>蓝方选手 / 英雄</span><span>对位</span><span>红方选手 / 英雄</span></div>
       <div class="postgame-rows">${rows}</div>
