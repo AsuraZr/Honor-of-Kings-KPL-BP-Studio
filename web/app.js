@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.3';
+  const APP_VERSION = '1.2.4';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -268,6 +268,7 @@
     '已锁定己方历史选用': 'Historical team picks locked',
     '当前手': 'Current turn',
     '淘汰赛赛程': 'Knockout Schedule',
+    '本局全局回放': 'Full match replay',
     '晋级下一轮': 'Advance',
     '淘汰': 'Eliminated',
     '官方赛程对阵': 'Official schedule',
@@ -631,6 +632,7 @@
     seriesModal: null,
     heroReturnTo: null,
     teamReturnHero: null,
+    seriesReturnTeam: null,
     coachProb: null,
     reviewGameNo: null,
     seriesBattleCache: new Map(),
@@ -2463,7 +2465,7 @@
     const current = gameTeams(series, game);
     if (String(current[side]) === String(teamId)) return;
     const otherTeam = side === 'blue' ? current.red : current.blue;
-    if (String(otherTeam) === String(teamId)) {
+    if (String(teamId) !== ALL && String(otherTeam) === String(teamId)) {
       toast('蓝方和红方不能是同一支战队');
       renderDraftDynamic();
       return;
@@ -5909,8 +5911,10 @@
     document.body.style.overflow = '';
     const heroReturn = state.heroReturnTo;
     const teamReturn = state.teamReturnHero;
+    const seriesReturn = state.seriesReturnTeam;
     state.heroReturnTo = null;
     state.teamReturnHero = null;
+    state.seriesReturnTeam = null;
     state.heroModal = null;
     state.teamModal = null;
     state.seriesModal = null;
@@ -5925,6 +5929,18 @@
     }
     if (heroReturn?.type === 'series') {
       openSeriesDetailModal(heroReturn.seriesId, heroReturn.gameIndex);
+      state.seriesReturnTeam = seriesReturn;
+      return;
+    }
+    if (seriesReturn?.teamId) {
+      openTeamModal(seriesReturn.teamId);
+      if (state.teamModal) {
+        if (seriesReturn.season === ALL || SEASONS.includes(seriesReturn.season)) {
+          state.teamModal.season = seriesReturn.season;
+        }
+        if (seriesReturn.heroId) state.teamModal.heroId = seriesReturn.heroId;
+        renderTeamModalBody();
+      }
       return;
     }
     if (heroReturn?.type === 'team' && heroReturn.teamId) {
@@ -6678,6 +6694,7 @@
     const team1 = state.teamMap.get(String(camp1.team_id || series.t1));
     const team2 = state.teamMap.get(String(camp2.team_id || series.t2));
     const winner = Number(detail.winCamp);
+    const replayUrl = detail.replayUrl ? String(detail.replayUrl) : '';
     const rows = ROLE_ORDER.map((role) => `<div class="postgame-row">
       <div class="post-side blue">${renderPostPlayer(buckets[1].get(role), 'blue')}</div>
       <span class="post-role-label ${roleClass(role)}">${esc(ROLE_SHORT[role] || role)}</span>
@@ -6699,6 +6716,7 @@
           ${team2 ? teamImage(team2, 'post-team-logo', team2.name) : ''}
         </div>
       </div>
+      ${replayUrl ? `<div class="postgame-replay-row"><a class="postgame-replay" href="${esc(replayUrl)}" target="_blank" rel="noopener noreferrer">${ICONS.external}<span>本局全局回放</span></a></div>` : ''}
       ${renderPostgameComparison(detail, buckets, team1, team2)}
       <div class="postgame-table-head"><span>蓝方选手 / 英雄</span><span>对位</span><span>红方选手 / 英雄</span></div>
       <div class="postgame-rows">${rows}</div>
@@ -6752,6 +6770,13 @@
       toast('该系列赛暂无逐局数据', 'error');
       return;
     }
+    state.seriesReturnTeam = state.teamModal?.teamId
+      ? {
+          teamId: state.teamModal.teamId,
+          season: state.teamModal.season,
+          heroId: state.teamModal.heroId
+        }
+      : null;
     state.seriesModal = {
       seriesId: series.id,
       gameIndex: Math.min(Math.max(0, gameIndex), battles.length - 1),
