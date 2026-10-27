@@ -539,7 +539,7 @@ def auto_sync_loop(stop_event: threading.Event) -> None:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "KPLBPStudio/1.2.6"
+    server_version = "KPLBPStudio/1.2.7"
 
     def log_message(self, fmt: str, *args: Any) -> None:
         # Keep the console clean; only log API errors and non-static failures.
@@ -643,7 +643,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(
                 {
                     "app": "KPL-BP-Studio",
-                    "version": "1.2.6",
+                    "version": "1.2.7",
                     "autoSyncSeconds": AUTO_SYNC_SECONDS,
                     "dataDir": str(DATA_DIR),
                     "source": "腾讯王者荣耀官方赛事中台（与王者营地赛事数据同源）",
