@@ -35,6 +35,8 @@ DEFAULT_PORT = int(os.environ.get("KPL_PORT", "5170"))
 OCR_MAX_BYTES = 15 * 1024 * 1024
 BATTLE_CACHE = DATA_DIR / "cache" / "battles"
 BUNDLED_BATTLE_CACHE = BUNDLE_DATA_DIR / "cache" / "battles"
+OFFICIAL_REPLAYS_CACHE = DATA_DIR / "cache" / "official-replays.json"
+BUNDLED_OFFICIAL_REPLAYS_CACHE = BUNDLE_DATA_DIR / "cache" / "official-replays.json"
 AVATAR_DIR = WEB_DIR / "assets" / "heroes"
 _AVATAR_TEMPLATES: list[tuple[int, Any]] | None = None
 
@@ -507,7 +509,21 @@ def load_battle_detail(battle_id: str) -> dict[str, Any] | None:
     videos = raw.get("video_list") or []
     replay_url = "https://kpl.qq.com/#/Videos"
     replay_direct = False
-    if isinstance(videos, list):
+    official_map = {}
+    for map_path in (OFFICIAL_REPLAYS_CACHE, BUNDLED_OFFICIAL_REPLAYS_CACHE):
+        if map_path.is_file():
+            try:
+                loaded = read_json(map_path)
+                if isinstance(loaded, dict):
+                    official_map = loaded
+                break
+            except Exception:  # noqa: BLE001 - replay metadata is optional
+                official_map = {}
+    official = official_map.get(str(battle_id)) if isinstance(official_map, dict) else None
+    if isinstance(official, dict) and official.get("url"):
+        replay_url = str(official.get("url"))
+        replay_direct = True
+    elif isinstance(videos, list):
         for video in videos:
             if isinstance(video, dict) and video.get("video_id"):
                 replay_url = "https://kpl.qq.com/#/PlayVideo?vid=" + urllib.parse.quote(str(video.get("video_id")))
@@ -542,7 +558,7 @@ def auto_sync_loop(stop_event: threading.Event) -> None:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "KPLBPStudio/1.2.8"
+    server_version = "KPLBPStudio/1.2.9"
 
     def log_message(self, fmt: str, *args: Any) -> None:
         # Keep the console clean; only log API errors and non-static failures.
@@ -646,7 +662,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(
                 {
                     "app": "KPL-BP-Studio",
-                    "version": "1.2.8",
+                    "version": "1.2.9",
                     "autoSyncSeconds": AUTO_SYNC_SECONDS,
                     "dataDir": str(DATA_DIR),
                     "source": "腾讯王者荣耀官方赛事中台（与王者营地赛事数据同源）",
