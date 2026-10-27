@@ -202,6 +202,7 @@ html[lang="en"] .bp-compare .bp-actions small { display: none; }
   background: rgba(0,0,0,.16); color: var(--muted); font-size: 10px; line-height: 1.55; white-space: pre-wrap;
 }
 .update-modal .update-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.update-modal .update-download-note { margin-top: 7px; color: var(--dim); font-size: 8.5px; }
 .update-modal .update-fallback { margin-top: 12px; padding-top: 9px; border-top: 1px solid rgba(255,255,255,.06); color: var(--dim); font-size: 9px; }
 .update-modal .update-fallback a { color: var(--gold-2); }
 @media (max-width: 1320px) {
