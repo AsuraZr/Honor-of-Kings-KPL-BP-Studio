@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.6';
+  const APP_VERSION = '1.2.7';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -17,6 +17,20 @@
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.2.7',
+      date: '2026-10-27',
+      zh: [
+        '系列赛赛后数据点击“载入BP工作台”后直接进入 BP 工作台',
+        '不再先返回战队详情',
+        '直接关闭赛后数据时仍返回原战队详情'
+      ],
+      en: [
+        'Loading a series into the BP workbench now goes directly to the workbench',
+        'No longer returns to team detail first',
+        'Closing the postgame data normally still returns to team detail'
+      ]
+    },
     {
       version: '1.2.6',
       date: '2026-10-27',
@@ -6669,6 +6683,9 @@
     state.season = season;
     state.reviewGameNo = null;
     state.lastAction = null;
+    // Loading into the workbench is a navigation action, not a modal "back".
+    // Do not let closeModal restore the team detail that opened this series.
+    state.seriesReturnTeam = null;
     saveDrafts();
     closeModal();
     if (state.view === 'draft') render();
