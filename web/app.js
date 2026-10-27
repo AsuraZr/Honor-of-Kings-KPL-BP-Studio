@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.5';
+  const APP_VERSION = '1.2.6';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -17,6 +17,20 @@
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.2.6',
+      date: '2026-10-27',
+      zh: [
+        '检查更新弹窗新增“直接下载 EXE”按钮',
+        '直接下载当前 GitHub Release 内对应的 exe 资产',
+        '无 exe 资产时回退到 GitHub 发布页'
+      ],
+      en: [
+        'Added a direct EXE download button to the update dialog',
+        'Downloads the matching EXE asset from the current GitHub Release',
+        'Falls back to the GitHub release page when no EXE asset exists'
+      ]
+    },
     {
       version: '1.2.5',
       date: '2026-10-27',
@@ -97,6 +111,10 @@
     '最新版本': 'Latest version',
     '打开 GitHub 仓库': 'Open GitHub repository',
     '下载更新': 'Download update',
+    '直接下载 EXE': 'Download EXE directly',
+    '打开发布页下载': 'Open release page',
+    '点击后直接下载 GitHub Release 内对应的 exe 文件': 'Downloads the matching EXE asset directly from the GitHub Release',
+    '该 Release 暂未上传 exe 资产': 'This release has no EXE asset yet',
     '查看 GitHub 发布页': 'View GitHub release',
     '如无法更新请点击此处': 'If the update fails, click here',
     'BP 工作台': 'BP Workbench',
@@ -5994,9 +6012,12 @@
             <div class="import-head"><div><div class="eyebrow">UPDATE AVAILABLE</div><h2>发现新版本 ${esc(latest)}</h2><p>当前版本 v${esc(APP_VERSION)} · 最新版本 ${esc(latest)}</p></div></div>
             <div class="update-notes">${esc((release.body || '包含最新功能与数据修复。').slice(0, 500))}</div>
             <div class="update-actions">
-              <a class="btn primary" href="${esc(downloadUrl)}" target="_blank" rel="noopener noreferrer">下载更新</a>
+              ${exeAsset?.browser_download_url
+                ? `<a class="btn primary" href="${esc(exeAsset.browser_download_url)}" download="${esc(exeAsset.name || 'KPL-BP-Studio.exe')}">${ICONS.download} 直接下载 EXE</a>`
+                : `<a class="btn primary" href="${esc(release.html_url || GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">打开发布页下载</a>`}
               <a class="btn ghost" href="${esc(release.html_url || GITHUB_REPO_URL)}" target="_blank" rel="noopener noreferrer">查看 GitHub 发布页</a>
             </div>
+            <div class="update-download-note">${exeAsset?.browser_download_url ? '点击后直接下载 GitHub Release 内对应的 exe 文件' : '该 Release 暂未上传 exe 资产'}</div>
             ${updateFallbackHtml()}
           </div>`, '检查更新');
         }
