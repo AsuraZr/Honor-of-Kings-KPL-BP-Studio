@@ -1005,6 +1005,80 @@ def build_s3_tws_bracket(
     }
 
 
+def build_s3_tts_schedule(
+    season_id: str,
+    season: dict[str, Any],
+    team_index: dict[str, dict[str, Any]],
+    official_matches: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Show the official knockout schedule, including matches not yet played."""
+    rounds = {key: [] for key in ("knockout", "final")}
+    for match in official_matches:
+        stage = str(match.get("match_stage_desc") or "")
+        if "淘汰赛" not in stage and "总决赛" not in stage:
+            continue
+        camp1 = match.get("camp1") or {}
+        camp2 = match.get("camp2") or {}
+        team1 = bracket_team(team_index, camp1.get("team_id"))
+        team2 = bracket_team(team_index, camp2.get("team_id"))
+        if not team1.get("id") and camp1.get("team_name"):
+            team1["name"] = str(camp1.get("team_name"))
+        if not team2.get("id") and camp2.get("team_name"):
+            team2["name"] = str(camp2.get("team_name"))
+        status_num = int(match.get("status", 0) or 0)
+        finished = status_num == 2
+        score1 = camp1.get("score")
+        score2 = camp2.get("score")
+        if status_num == 0:
+            score1 = None
+            score2 = None
+        winner_id = ""
+        if finished and score1 is not None and score2 is not None:
+            winner_id = str(team1.get("id") if int(score1) > int(score2) else team2.get("id") if int(score2) > int(score1) else "")
+        key = "final" if "总决赛" in stage else "knockout"
+        rounds[key].append(
+            {
+                "id": str(match.get("match_id") or ""),
+                "date": str(match.get("start_time") or "")[:16],
+                "team1": team1,
+                "team2": team2,
+                "score1": score1,
+                "score2": score2,
+                "winnerId": winner_id,
+                "loserId": "",
+                "winnerTo": "冠军" if key == "final" else "晋级下一轮",
+                "loserTo": "亚军" if key == "final" else "淘汰",
+                "status": "finished" if finished else "live" if status_num == 1 else "upcoming",
+            }
+        )
+    round_defs = (
+        ("knockout", "淘汰赛赛程", "single"),
+        ("final", "总决赛", "final"),
+    )
+    structured = [
+        {"key": key, "name": name, "bracket": bracket, "matches": rounds[key]}
+        for key, name, bracket in round_defs
+        if rounds[key]
+    ]
+    if not structured:
+        return build_s3_tts_placeholder(season_id, season)
+    return {
+        "season": season_id,
+        "label": season.get("display") or season_id,
+        "key": "tts",
+        "name": "淘汰赛",
+        "stage": "淘汰赛",
+        "view": "bracket",
+        "source": "official",
+        "sourceLabel": "官方赛程对阵",
+        "sourceUrl": "https://kpl.qq.com/",
+        "updatedAt": now_iso(),
+        "rounds": structured,
+        "groups": [],
+        "note": "按官方赛程展示淘汰赛对阵；未开赛显示开赛时间，进行中显示当前比分，赛后自动更新赛果。",
+    }
+
+
 def build_s3_tts_placeholder(
     season_id: str,
     season: dict[str, Any],
@@ -1264,7 +1338,12 @@ def compute_snapshot(
                 team_index,
                 base[season_id].get("matches") or [],
             )
-            tts = build_s3_tts_placeholder(season_id, season)
+            tts = build_s3_tts_schedule(
+                season_id,
+                season,
+                team_index,
+                base[season_id].get("matches") or [],
+            )
             standings[season_id] = {
                 **lts,
                 "stage": "擂台赛",
