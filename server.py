@@ -505,11 +505,13 @@ def load_battle_detail(battle_id: str) -> dict[str, Any] | None:
             }
         )
     videos = raw.get("video_list") or []
-    replay_url = ""
+    replay_url = "https://kpl.qq.com/#/Videos"
+    replay_direct = False
     if isinstance(videos, list):
         for video in videos:
             if isinstance(video, dict) and video.get("video_id"):
                 replay_url = "https://kpl.qq.com/#/PlayVideo?vid=" + urllib.parse.quote(str(video.get("video_id")))
+                replay_direct = True
                 break
     return {
         "battleId": raw.get("battle_id"),
@@ -520,6 +522,7 @@ def load_battle_detail(battle_id: str) -> dict[str, Any] | None:
         "camp2": camps["camp2"],
         "players": players,
         "replayUrl": replay_url,
+        "replayDirect": replay_direct,
     }
 
 
@@ -539,7 +542,7 @@ def auto_sync_loop(stop_event: threading.Event) -> None:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "KPLBPStudio/1.2.7"
+    server_version = "KPLBPStudio/1.2.8"
 
     def log_message(self, fmt: str, *args: Any) -> None:
         # Keep the console clean; only log API errors and non-static failures.
@@ -643,7 +646,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(
                 {
                     "app": "KPL-BP-Studio",
-                    "version": "1.2.7",
+                    "version": "1.2.8",
                     "autoSyncSeconds": AUTO_SYNC_SECONDS,
                     "dataDir": str(DATA_DIR),
                     "source": "腾讯王者荣耀官方赛事中台（与王者营地赛事数据同源）",
