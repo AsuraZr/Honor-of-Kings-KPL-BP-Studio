@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.2';
+  const APP_VERSION = '1.2.3';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -267,6 +267,10 @@
     '摸鱼の修酱': 'MoYu XiuJiang',
     '已锁定己方历史选用': 'Historical team picks locked',
     '当前手': 'Current turn',
+    '淘汰赛赛程': 'Knockout Schedule',
+    '晋级下一轮': 'Advance',
+    '淘汰': 'Eliminated',
+    '官方赛程对阵': 'Official schedule',
     '导出 CSV': 'Export CSV',
     '已登场英雄': 'Heroes Played',
     '至少': 'At least',
@@ -5320,7 +5324,13 @@
     };
     const winner1 = Boolean(match.winnerId && match.winnerId === match.team1?.id);
     const winner2 = Boolean(match.winnerId && match.winnerId === match.team2?.id);
-    const status = match.status === 'finished' ? '已结束' : match.status === 'tbd' ? '待定' : '未开始';
+    const status = match.status === 'finished'
+      ? '已结束'
+      : match.status === 'live'
+        ? '进行中'
+        : match.status === 'tbd'
+          ? '待定'
+          : '未开始';
     return `<div class="bracket-match ${match.status === 'tbd' ? 'is-tbd' : ''}">
       <div class="bracket-match-top"><span>${esc(match.date || '时间待定')}</span><em>${status}</em></div>
       ${teamRow(match.team1, match.score1, winner1)}
@@ -5336,8 +5346,8 @@
     const sections = [
       ['winners', '胜者组'],
       ['losers', '败者组'],
-      ['final', '总决赛'],
-      ['single', '突围赛']
+      ['single', stage.key === 'tts' ? '淘汰赛' : '突围赛'],
+      ['final', '总决赛']
     ];
     const html = sections.map(([key, label]) => {
       const rounds = (stage.rounds || []).filter((round) => round.bracket === key);
