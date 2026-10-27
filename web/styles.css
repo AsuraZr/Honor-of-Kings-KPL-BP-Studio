@@ -1640,6 +1640,10 @@ select option { background: #101a28; color: var(--text); }
 .postgame-board { overflow-x: auto; }
 .postgame-board > * { min-width: 780px; }
 .postgame-team-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: 8px; background: rgba(0,0,0,.16); }
+.postgame-replay-row { display: flex; justify-content: center; margin-top: 8px; }
+.postgame-replay { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border: 1px solid rgba(231,185,105,.42); border-radius: 7px; background: rgba(231,185,105,.08); color: var(--gold-2); font-size: 9px; font-weight: 600; text-decoration: none; }
+.postgame-replay svg { width: 13px; height: 13px; }
+.postgame-replay:hover { border-color: var(--gold); background: rgba(231,185,105,.15); color: var(--text); }
 .post-team { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .post-team.red { justify-content: flex-end; text-align: right; }
 .post-team-logo { width: 30px; height: 30px; object-fit: contain; }
