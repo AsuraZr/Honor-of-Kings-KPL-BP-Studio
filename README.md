@@ -4,8 +4,8 @@
 
 **Honor of Kings KPL-BP-Studio** is a local Ban/Pick analysis workbench for the Honor of Kings KPL professional league. It covers the 2026 Grand Finals, the 2026 KPL Summer Split, and combined two-season data, including hero ban/pick/win rates, team records, synergy probabilities, coach-side BP modeling, and incremental synchronization from the official Tencent match API.
 
-- **Version:** v1.2.7
-- **Latest update:** loading postgame BP now goes directly to the BP workbench; closing postgame data normally still returns to team detail.
+- **Version:** v1.2.8
+- **Latest update:** replay metadata is rechecked on every sync; new knockout replays use the official KPL player, with an official replay-library fallback while a video ID is pending.
 - **GitHub:** <https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
 - **Official KPL live page:** <https://kpl.qq.com/>
 - **Update fallback:** <https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
@@ -24,9 +24,9 @@
 
 当前随包快照：**176 场系列赛 / 721 局 BP / 133 位英雄 / 18 支战队**，数据覆盖至 2026-10-22 18:00。
 
-**版本：v1.2.7**
+**版本：v1.2.8**
 
-- 最新更新：系列赛赛后数据点击“载入BP工作台”后直接进入 BP 工作台，不再返回战队详情；直接关闭赛后数据时仍返回原战队详情。
+- 最新更新：每次同步自动复查尚未返回回放的已结束小局；官方视频 ID 可用时直达 KPL 官方播放器，暂未返回时打开 KPL 官方回放库。
 - GitHub 仓库：<https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
 - KPL 官方直播：<https://kpl.qq.com/>
 - 软件顶部“检查更新”会读取 GitHub 最新 Release；如无法更新，请点击备用链接：<https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
