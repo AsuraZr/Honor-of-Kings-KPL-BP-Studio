@@ -33,6 +33,8 @@ from runtime_paths import DATA_DIR, WEB_DIR
 
 CACHE_DIR = DATA_DIR / "cache"
 SNAPSHOT_PATH = DATA_DIR / "snapshot.json"
+OFFICIAL_REPLAYS_PATH = CACHE_DIR / "official-replays.json"
+KPLOW_API = "https://kplshop-op.timi-esports.qq.com/kplow/"
 STATUS_PATH = DATA_DIR / "status.json"
 LOCK_PATH = DATA_DIR / "sync.lock"
 WEB_ASSETS = WEB_DIR / "assets"
@@ -427,6 +429,136 @@ def get_battle_detail(battle_id: str, *, force: bool) -> dict[str, Any] | None:
         return compact_battle_detail(cached) if cached is not None else None
     write_json_atomic(cache_path, detail)
     return compact_battle_detail(detail)
+
+
+def kplow_json(endpoint: str, payload: dict[str, Any]) -> Any:
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(
+        KPLOW_API + endpoint,
+        data=body,
+        headers={
+            **HEADERS,
+            "Content-Type": "application/json; charset=UTF-8",
+            "Origin": "https://kpl.qq.com",
+            "Referer": "https://kpl.qq.com/",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        raw = response.read()
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
+
+def fetch_official_replays(
+    season_base: dict[str, dict[str, Any]],
+    series: list[dict[str, Any]],
+    battles: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    """Map official KPL schedule rounds to local battle IDs.
+
+    The KPL front page exposes match replays through getScheduleList /
+    getScheduleDetail. Those IDs are different from the data API match IDs,
+    so match by season, date and team names, then round number.
+    """
+    season_id = "KPL2026S3"
+    base = season_base.get(season_id) or {}
+    team_names: dict[str, str] = {}
+    for row in base.get("teams") or []:
+        info = row.get("team_info") if isinstance(row, dict) else {}
+        if isinstance(info, dict) and info.get("team_id"):
+            team_names[str(info.get("team_id"))] = str(info.get("team_name") or "")
+    series_by_key: dict[tuple[str, frozenset[str]], dict[str, Any]] = {}
+    for row in series:
+        if row.get("season") != season_id:
+            continue
+        names = frozenset(
+            name
+            for name in (
+                team_names.get(str(row.get("t1")), ""),
+                team_names.get(str(row.get("t2")), ""),
+            )
+            if name
+        )
+        if len(names) == 2:
+            series_by_key[(str(row.get("date") or "")[:10], names)] = row
+    if not series_by_key:
+        return {}
+    schedule = kplow_json(
+        "getScheduleList",
+        {"seasonid": season_id, "stageid": "", "team_id": ""},
+    )
+    rows = ((schedule.get("data") or {}).get("list") or []) if isinstance(schedule, dict) else []
+    replay_map: dict[str, dict[str, Any]] = {}
+    tz = timezone(timedelta(hours=8))
+    for schedule_row in rows:
+        if str(schedule_row.get("stageid") or "") not in {"tts", "zjs"}:
+            continue
+        if int(schedule_row.get("schedule_status", 0) or 0) != 4:
+            continue
+        names = frozenset(
+            name
+            for name in (
+                str(schedule_row.get("team_a_name") or ""),
+                str(schedule_row.get("team_b_name") or ""),
+            )
+            if name
+        )
+        if len(names) != 2:
+            continue
+        try:
+            day = datetime.fromtimestamp(
+                int(schedule_row.get("start_timestamp") or 0), tz
+            ).strftime("%Y-%m-%d")
+        except (TypeError, ValueError, OSError):
+            continue
+        local_series = series_by_key.get((day, names))
+        if not local_series:
+            continue
+        try:
+            detail = kplow_json(
+                "getScheduleDetail",
+                {
+                    "seasonid": schedule_row.get("seasonid") or season_id,
+                    "scheduleid": schedule_row.get("scheduleid"),
+                },
+            )
+        except Exception as exc:  # noqa: BLE001 - replay metadata is optional
+            print(f"[warn] replay schedule {schedule_row.get('scheduleid')}: {exc}", file=sys.stderr)
+            continue
+        rounds = ((detail.get("data") or {}).get("round_details") or []) if isinstance(detail, dict) else []
+        for round_row in rounds:
+            if not round_row.get("vid"):
+                continue
+            try:
+                round_no = int(round_row.get("round") or 0)
+            except (TypeError, ValueError):
+                continue
+            battle = next(
+                (
+                    row
+                    for row in battles
+                    if str(row.get("mid")) == str(local_series.get("id"))
+                    and int(row.get("seq") or 0) == round_no
+                ),
+                None,
+            )
+            if not battle:
+                continue
+            query = urllib.parse.urlencode(
+                {
+                    "seasonid": schedule_row.get("seasonid") or season_id,
+                    "scheduleid": schedule_row.get("scheduleid"),
+                    "round": round_no,
+                }
+            )
+            replay_map[str(battle.get("id"))] = {
+                "url": "https://kpl.qq.com/#/PlayBack?" + query,
+                "seasonid": schedule_row.get("seasonid") or season_id,
+                "scheduleid": schedule_row.get("scheduleid"),
+                "round": round_no,
+            }
+    return replay_map
 
 
 def collect_battle_records(
@@ -1699,6 +1831,13 @@ def run_sync(force: bool = False) -> dict[str, Any]:
         series, battles, warnings = collect_battle_records(
             seasons, base, force=force
         )
+        try:
+            replay_map = fetch_official_replays(base, series, battles)
+            if replay_map or not OFFICIAL_REPLAYS_PATH.exists():
+                write_json_atomic(OFFICIAL_REPLAYS_PATH, replay_map)
+        except Exception as exc:  # noqa: BLE001 - replay metadata must not block BP sync
+            warnings.append(f"官方赛事回放同步失败: {exc}")
+            print(f"[warn] official replays: {exc}", file=sys.stderr)
         set_status(phase="computing", message="正在汇总英雄、战队与 BP 数据")
 
         snapshot = compute_snapshot(seasons, base, roster, series, battles, warnings)
