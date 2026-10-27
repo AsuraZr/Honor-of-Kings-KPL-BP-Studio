@@ -412,18 +412,19 @@ def compact_battle_detail(detail: dict[str, Any]) -> dict[str, Any]:
 
 def get_battle_detail(battle_id: str, *, force: bool) -> dict[str, Any] | None:
     cache_path = CACHE_DIR / "battles" / f"{safe_key(battle_id)}.json"
+    cached = None
     if not force:
         cached = cache_read(cache_path)
-        if cached is not None:
+        if cached is not None and cached.get("video_list"):
             return compact_battle_detail(cached)
     try:
         payload = http_json("/leaguesite/battle/open", {"battle_id": battle_id})
     except Exception as exc:  # noqa: BLE001 - a single missing battle should not kill sync
         print(f"[warn] battle {battle_id}: {exc}", file=sys.stderr)
-        return None
+        return compact_battle_detail(cached) if cached is not None else None
     detail = payload.get("data")
     if not isinstance(detail, dict):
-        return None
+        return compact_battle_detail(cached) if cached is not None else None
     write_json_atomic(cache_path, detail)
     return compact_battle_detail(detail)
 
