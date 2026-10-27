@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.8';
+  const APP_VERSION = '1.2.9';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -17,6 +17,22 @@
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.2.9',
+      date: '2026-10-27',
+      zh: [
+        '赛事回放改为从 KPL 官网“赛程·回放”读取',
+        '按比赛日期、战队和局数自动匹配官方回放',
+        '北京JDG vs 广州TTG 六局回放已自动入库',
+        '淘汰赛后续回放会在同步时自动更新'
+      ],
+      en: [
+        'Replays are now read from the official KPL Schedule / Replay section',
+        'Matches are mapped by date, teams, and game number',
+        'All six JDG vs TTG knockout replays are linked automatically',
+        'Future knockout replays update during normal sync'
+      ]
+    },
     {
       version: '1.2.8',
       date: '2026-10-27',
