@@ -1942,3 +1942,24 @@ select option { background: #101a28; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
 }
+
+/* Version history dialog */
+.changelog-modal { max-width: 760px; }
+.changelog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.changelog-head h2 { margin: 3px 0 4px; font-size: 20px; }
+.changelog-head p { margin: 0; color: var(--dim); font-size: 9px; }
+.changelog-list { max-height: 52vh; overflow-y: auto; padding-right: 4px; display: grid; gap: 8px; }
+.changelog-entry { padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 8px; background: rgba(255,255,255,.018); }
+.changelog-entry.is-current { border-color: rgba(231,185,105,.46); background: rgba(231,185,105,.06); }
+.changelog-entry-head { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.changelog-entry-head b { color: var(--text); font-family: var(--display); font-size: 11px; }
+.changelog-entry-head span { color: var(--dim); font-size: 8px; }
+.changelog-entry-head em { margin-left: auto; padding: 2px 6px; border: 1px solid rgba(231,185,105,.4); border-radius: 4px; color: var(--gold-2); font-size: 7px; font-style: normal; }
+.changelog-entry ul { margin: 0; padding-left: 15px; color: var(--muted); font-size: 9px; line-height: 1.7; }
+.changelog-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.changelog-dismiss { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 9px; cursor: pointer; }
+.changelog-dismiss input { accent-color: var(--gold); }
+@media (max-width: 660px) {
+  .changelog-head, .changelog-footer { flex-direction: column; align-items: flex-start; }
+  .changelog-list { max-height: 45vh; }
+}
