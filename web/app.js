@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.7';
+  const APP_VERSION = '1.2.8';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -17,6 +17,20 @@
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.2.8',
+      date: '2026-10-27',
+      zh: [
+        '官方数据同步时自动复查尚未返回回放的已结束小局',
+        '官方视频 ID 可用时直达 KPL 官方赛事播放器',
+        '暂未返回视频 ID 时打开 KPL 官方回放库，不再显示空白链接'
+      ],
+      en: [
+        'Sync now rechecks finished games whose replay metadata was previously unavailable',
+        'Opens the official KPL player as soon as a video ID is available',
+        'Falls back to the official KPL replay library instead of a missing link'
+      ]
+    },
     {
       version: '1.2.7',
       date: '2026-10-27',
@@ -6905,7 +6919,9 @@
     const token = ++modal.token;
     content.innerHTML = '<div class="postgame-loading"><i></i><span>正在读取赛后数据…</span></div>';
     let detail = state.seriesBattleCache.get(battle.id);
-    if (!detail) {
+    // Do not cache a missing replay forever: sync refreshes replay metadata
+    // when the official video is published, so retry until it appears.
+    if (!detail || !detail.replayUrl || detail.replayDirect === false) {
       try {
         const response = await fetch(`/api/battle?id=${encodeURIComponent(battle.id)}`);
         const payload = await response.json().catch(() => ({}));
@@ -6913,8 +6929,10 @@
         detail = payload;
         state.seriesBattleCache.set(battle.id, detail);
       } catch (error) {
-        detail = fallbackSeriesBattleDetail(series, battle);
-        state.seriesBattleCache.set(battle.id, detail);
+        if (!detail) {
+          detail = fallbackSeriesBattleDetail(series, battle);
+          state.seriesBattleCache.set(battle.id, detail);
+        }
       }
     }
     if (modal.token !== token || !$('#seriesDetailContent')) return;
