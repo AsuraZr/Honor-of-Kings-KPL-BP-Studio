@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.9';
+  const APP_VERSION = '1.2.10';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -17,6 +17,20 @@
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.2.10',
+      date: '2026-10-28',
+      zh: [
+        '全局 BP 大场中，教练席 Ban 建议排除对方此前小局已用英雄',
+        '避免推荐 Ban 对手已经无法再次选择的英雄',
+        'Pick 建议和巅峰对决逻辑保持不变'
+      ],
+      en: [
+        'In a Global BP series, coach ban suggestions exclude heroes already used by the opponent',
+        'No longer recommends banning a hero the opponent cannot pick again',
+        'Pick suggestions and Peak Showdown behavior are unchanged'
+      ]
+    },
     {
       version: '1.2.9',
       date: '2026-10-27',
@@ -3209,6 +3223,9 @@
     const pickedByBlue = new Set(game.blue.picks.filter(Boolean).map(Number));
     const pickedByRed = new Set(game.red.picks.filter(Boolean).map(Number));
     const ownPrior = peak ? new Set() : priorPicksForTeam(series, ownTeam, game.no);
+    // In a global-BP series, a hero already used by the opponent cannot be
+    // picked by them again. Do not waste a ban recommendation on it.
+    const enemyPrior = peak ? new Set() : priorPicksForTeam(series, enemyTeam, game.no);
     const ownCtx = getCtx(season, ownTeam);
     const enemyCtx = getCtx(season, enemyTeam);
     const ownSideScope = getTeamSideScope(season, ownTeam, side);
@@ -3236,6 +3253,7 @@
       } else if (pickedByBlue.has(hero.id) || pickedByRed.has(hero.id)) {
         continue;
       }
+      if (type === 'ban' && enemyPrior.has(hero.id)) continue;
       if (familyLocked && isYuanliuId(hero.id)) continue;
       if (roleSet.size && heroRoles(hero).some((role) => roleSet.has(role))) continue;
       const stats = heroStat(hero, season) || {};
@@ -3546,7 +3564,7 @@
       </div>
       <div class="rec-list">${rows || '<div class="coach-empty">暂无可推荐英雄</div>'}</div>
       ${renderCoachSlotProbabilities(series, game, action, teams)}
-      <div class="coach-foot">${peak ? '巅峰对决为双方盲选；建议按当前选边（蓝/红）分别统计同边全KPL历史，参考版本强度、己方搭档、同边 Ban/Pick 位倾向；已排除与己方已选英雄同位置的候选。元流之子任一分路被任一方选中后，双方本局其余分路均锁定。' : '综合版本 Ban/Pick 率、同队搭档率、战队偏好，以及本方与对方各自同边对全KPL战队的历史；B/P 位权重前重后轻；Ban 排除对方已选英雄的常用分路，Pick 排除己方已选英雄的常用分路；多分路英雄的次要分路不排除。元流之子任一分路被选后，己方全局锁定五个分路，对方本局锁定五个分路，并移出己方 Pick 建议。全局 BP 已排除己方历史选用。'} 非官方预测。</div>`;
+      <div class="coach-foot">${peak ? '巅峰对决为双方盲选；建议按当前选边（蓝/红）分别统计同边全KPL历史，参考版本强度、己方搭档、同边 Ban/Pick 位倾向；已排除与己方已选英雄同位置的候选。元流之子任一分路被任一方选中后，双方本局其余分路均锁定。' : '综合版本 Ban/Pick 率、同队搭档率、战队偏好，以及本方与对方各自同边对全KPL战队的历史；B/P 位权重前重后轻；Ban 排除对方已选英雄的常用分路，Pick 排除己方已选英雄的常用分路；多分路英雄的次要分路不排除。元流之子任一分路被选后，己方全局锁定五个分路，对方本局锁定五个分路，并移出己方 Pick 建议。全局 BP 已排除己方历史选用；Ban 建议已排除对方全局已用英雄。'} 非官方预测。</div>`;
   }
 
   function heroAvailability(heroId, side, type, series, game) {
