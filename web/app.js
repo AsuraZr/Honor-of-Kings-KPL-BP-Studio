@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.3.1';
+  const APP_VERSION = '1.3.2';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -20,6 +20,18 @@
   const heroAlphaCompare = (a, b) => HERO_NAME_COLLATOR.compare(a.name, b.name) || a.id - b.id;
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.3.2',
+      date: '2026-11-05',
+      zh: [
+        '修正比赛 HUD 系列赛比分显示',
+        '英雄选择叠层与动态背景保持 v1.3.1 行为'
+      ],
+      en: [
+        'Fixed the series score shown in the match HUD',
+        'Preserved the v1.3.1 hero-picker overlay and dynamic backdrop'
+      ]
+    },
     {
       version: '1.3.1',
       date: '2026-11-05',
@@ -4032,6 +4044,9 @@
     const series = getSeries();
     const game = getGame();
     const teams = gameTeams(series, game);
+    const score = seriesScore(series);
+    const blueScore = score[String(teams.blue)] || 0;
+    const redScore = score[String(teams.red)] || 0;
     const action = canEditCurrentGame() ? currentAction(getDraft()) : null;
     const clock = state.matchClock;
     const remaining = clock ? Math.max(0, clock.deadline - Date.now()) : 0;
@@ -4051,7 +4066,7 @@
     hud.className = `match-hud ${urgent ? 'is-urgent' : ''} ${game.mode === 'peak' ? 'is-peak' : ''}`;
     hud.innerHTML = `<div class="match-hud-bar">
       <div class="match-hud-brand"><span class="match-live-dot"></span> KPL MATCH MODE <b>${phaseLabelText}</b></div>
-      <div class="match-hud-stage">G${game.no} / BO${series.bo} · ${series.s1}:${series.s2}</div>
+      <div class="match-hud-stage">G${game.no} / BO${series.bo} · ${blueScore}:${redScore}</div>
       <div class="match-hud-tools">
         <button type="button" data-match-sound>${soundLabel}</button>
         <button type="button" data-match-music>${en ? 'Music' : '音乐'}</button>
@@ -4061,14 +4076,14 @@
     <div class="match-hud-main">
       <div class="match-hud-team blue">
         <span>${esc(teamName(teams.blue))}</span>
-        <b>${esc(String(series.s1 ?? 0))}</b>
+        <b>${esc(String(blueScore))}</b>
       </div>
       <div class="match-hud-clock" style="--match-progress:${progress}%">
         <div class="match-clock-ring"><strong>${clock ? seconds : '—'}</strong><small>SEC</small></div>
         <div class="match-clock-copy"><em>${actionText}</em><small>${clock ? autoLabel : completeLabel}</small></div>
       </div>
       <div class="match-hud-team red">
-        <b>${esc(String(series.s2 ?? 0))}</b>
+        <b>${esc(String(redScore))}</b>
         <span>${esc(teamName(teams.red))}</span>
       </div>
     </div>`;
