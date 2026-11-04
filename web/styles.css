@@ -2089,3 +2089,28 @@ body.match-picking .draft-main > .coach-panel { display: none; }
 @media (max-width: 760px) {
   body.match-picking .draft-main { top: 86px; left: 7px; right: 7px; bottom: 7px; }
 }
+
+/* Match Mode: hero picker first, BP board below (not covered) */
+body.match-mode #draftPage { display: flex; flex-direction: column; }
+body.match-mode #draftPage > .page-head { order: 0; }
+body.match-mode #draftPage > #seriesBar { order: 1; }
+body.match-mode #draftPage > .draft-main { order: 2; }
+body.match-mode #draftPage > .draft-scoreboard { order: 3; }
+body.match-mode #draftPage > .draft-analysis { display: none; }
+body.match-picking .draft-main {
+  position: static; inset: auto; left: auto; right: auto; top: auto; bottom: auto;
+  display: grid; margin: 8px 0 0; padding: 0;
+}
+body.match-picking .draft-main > .pool-panel {
+  height: auto; max-height: 50vh; display: flex; flex-direction: column;
+  background: rgba(8,11,17,.84); border: 1px solid rgba(231,185,105,.30);
+  box-shadow: 0 10px 34px rgba(0,0,0,.28);
+}
+body.match-picking .draft-main > .pool-panel .hero-grid {
+  flex: 0 1 auto; min-height: 0; max-height: calc(50vh - 105px); overflow-y: auto;
+}
+body.match-picking .draft-scoreboard { margin-top: 8px; }
+@media (max-width: 760px) {
+  body.match-picking .draft-main > .pool-panel { max-height: 48vh; }
+  body.match-picking .draft-main > .pool-panel .hero-grid { max-height: calc(48vh - 105px); }
+}
