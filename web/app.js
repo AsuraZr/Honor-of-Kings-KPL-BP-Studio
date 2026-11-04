@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.3.2';
+  const APP_VERSION = '1.3.3';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -16,10 +16,32 @@
   const UPDATE_FALLBACK_URL = 'https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1';
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
   const MATCH_TURN_MS = 30000;
+  const MATCH_MUSIC = {
+    global: 'assets/audio/global-bp.m4a',
+    peak: 'assets/audio/peak-showdown.m4a'
+  };
   const HERO_NAME_COLLATOR = new Intl.Collator('zh-Hans-CN', { usage: 'sort', sensitivity: 'base' });
   const heroAlphaCompare = (a, b) => HERO_NAME_COLLATOR.compare(a.name, b.name) || a.id - b.id;
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.3.3',
+      date: '2026-11-05',
+      zh: [
+        '取消 BP 中文语音播报',
+        '比赛模式允许重置当前系列赛',
+        '内置你提供的全局 BP 与巅峰对决比赛音频，并移除音乐曲目名称推荐',
+        '比赛 BP 界面移到英雄选择界面下方，不再被覆盖',
+        '保留 2026 年度总决赛动态背景和比赛 HUD'
+      ],
+      en: [
+        'Removed Chinese BP voice announcements',
+        'Match Mode can reset the current series',
+        'Bundled the supplied Global BP and Peak Showdown audio; removed track-name suggestions',
+        'The BP interface now sits below the hero picker instead of being covered',
+        'Kept the 2026 Grand Finals dynamic backdrop and match HUD'
+      ]
+    },
     {
       version: '1.3.2',
       date: '2026-11-05',
@@ -38,14 +60,14 @@
       zh: [
         '比赛模式英雄选择改为覆盖在 BP 界面上的全屏选择层',
         '新增 2026 年度总决赛金色动态背景和比赛 HUD 动效',
-        '比赛音乐支持选择本地《王者世冠（小玖 remix）》与《冠军杯》音频',
-        '保留 30 秒倒计时、自动选人、禁回退、首字母排序和英雄语音'
+        '比赛音乐支持选择本地全局 BP 与巅峰对决音频',
+        '保留 30 秒倒计时、自动选人、禁回退和首字母排序'
       ],
       en: [
         'Match Mode now overlays a full-screen hero picker on the BP interface',
         'Added an animated 2026 Grand Finals gold backdrop and match HUD effects',
         'Local audio files can be assigned to Global BP and Peak Showdown',
-        '30-second timer, auto-pick, locked undo, alphabetical sorting and hero voice remain'
+        '30-second timer, auto-pick, locked undo and alphabetical sorting remain'
       ]
     },
     {
@@ -56,14 +78,14 @@
         '新增 30 秒 Ban/Pick 倒计时，结束自动选择剩余分路首位英雄',
         '比赛模式禁止撤销、换人、重置和导入 BP，英雄池按首字母排序',
         '退出比赛模式立即停止倒计时，BP 英雄完整保留',
-        '新增比赛动态 HUD、全局 BP / 巅峰对决比赛音效与英雄语音播报'
+        '新增比赛动态 HUD 与全局 BP / 巅峰对决比赛音效'
       ],
       en: [
         'Added Match Mode with coach, lineup-rate and player-data panels hidden',
         'Added a 30-second Ban/Pick timer with automatic first-role hero selection',
         'Undo, hero swaps, resets and imports are locked in Match Mode; heroes sort alphabetically',
         'Leaving Match Mode stops the timer immediately while preserving every BP pick',
-        'Added a dynamic match HUD, Global BP / Peak Showdown music and hero voice calls'
+        'Added a dynamic match HUD and Global BP / Peak Showdown match audio'
       ]
     },
     {
@@ -2383,6 +2405,20 @@
         return;
       }
       if (event.target.closest('[data-match-music]')) openMatchMusicModal();
+      if (event.target.closest('[data-match-reset]')) {
+        if (!window.confirm('确定重置当前比赛吗？会清空本场全部 BP，但保留比赛模式和战队。')) return;
+        const series = getSeries();
+        const next = createSeries(series.season, series.bo, {
+          blue: series.blueTeam,
+          red: series.redTeam
+        });
+        state.drafts[series.season] = next;
+        state.reviewGameNo = null;
+        state.lastAction = null;
+        saveDrafts();
+        renderDraftDynamic();
+        toast('比赛已重置', 'success');
+      }
     });
     window.addEventListener('hashchange', () => {
       const next = parseHash();
@@ -2939,9 +2975,11 @@
     for (const team of teams) {
       const stats = teamStat(team, season);
       const rate = stats?.series?.winRate;
-      const suffix = hasData(team) && rate !== null && rate !== undefined
-        ? ` · ${pct(rate, 0)}`
-        : ' · 无本季数据';
+      const suffix = state.matchMode
+        ? ''
+        : hasData(team) && rate !== null && rate !== undefined
+          ? ` · ${pct(rate, 0)}`
+          : ' · 无本季数据';
       options.push(`<option value="${esc(team.id)}" ${String(selected) === String(team.id) ? 'selected' : ''}>${esc(team.name)}${suffix}</option>`);
     }
     return options.join('');
@@ -4070,6 +4108,7 @@
       <div class="match-hud-tools">
         <button type="button" data-match-sound>${soundLabel}</button>
         <button type="button" data-match-music>${en ? 'Music' : '音乐'}</button>
+        <button type="button" data-match-reset>${en ? 'Reset match' : '重置比赛'}</button>
         <button type="button" data-match-exit>${exitLabel}</button>
       </div>
     </div>
@@ -4117,9 +4156,10 @@
     if (state.matchAudio?.peak === peak) return;
     stopMatchAudio();
     const customUrl = state.matchMusicUrls[peak ? 'peak' : 'global'];
-    if (customUrl) {
+    const audioUrl = customUrl || MATCH_MUSIC[peak ? 'peak' : 'global'];
+    if (audioUrl) {
       try {
-        const file = new Audio(customUrl);
+        const file = new Audio(audioUrl);
         file.loop = true;
         file.volume = 0.45;
         file.play().catch(() => {});
@@ -4181,14 +4221,14 @@
     showModal(`<div class="modal-body match-music-modal">
       <div class="import-head"><div><div class="eyebrow">MATCH AUDIO</div><h2>${en ? 'Match Music' : '比赛音乐'}</h2><p>${en ? 'Choose legally obtained local audio files. The app does not bundle official KPL recordings.' : '请选择你已合法获得的本地音频文件；软件不内置 KPL 官方版权录音。'}</p></div></div>
       <div class="match-music-row">
-        <div><b>${en ? 'Global BP' : '全局 BP'}</b><small>${esc(fileName('global', en ? 'Built-in generated cue' : '未选择（使用内置合成音效）'))}</small></div>
+        <div><b>${en ? 'Global BP' : '全局 BP'}</b><small>${esc(fileName('global', en ? 'Built-in match audio' : '内置比赛音频'))}</small></div>
         <label class="btn ghost sm">${en ? 'Choose file' : '选择音频'}<input type="file" accept="audio/*" data-match-music-key="global" hidden /></label>
       </div>
       <div class="match-music-row">
-        <div><b>${en ? 'Peak Showdown' : '巅峰对决'}</b><small>${esc(fileName('peak', en ? 'Built-in generated cue' : '未选择（使用内置合成音效）'))}</small></div>
+        <div><b>${en ? 'Peak Showdown' : '巅峰对决'}</b><small>${esc(fileName('peak', en ? 'Built-in match audio' : '内置比赛音频'))}</small></div>
         <label class="btn ghost sm">${en ? 'Choose file' : '选择音频'}<input type="file" accept="audio/*" data-match-music-key="peak" hidden /></label>
       </div>
-      <div class="match-music-note">${en ? 'Recommended tracks: “王者世冠（小玖 remix）” for Global BP and “冠军杯” for Peak Showdown. Use files you already own.' : '建议曲目：全局 BP 使用《王者世冠（小玖 remix）》，巅峰对决使用《冠军杯》。请使用你已合法拥有的音频文件。'}</div>
+      <div class="match-music-note">${en ? 'The built-in audio comes from the supplied match videos. You can replace either track with a local audio file.' : '内置音频来自你提供的比赛视频；可以分别为全局 BP 和巅峰对决选择本地音频替换。'}</div>
       <div class="update-actions"><button class="btn ghost sm" type="button" data-match-music-clear>${en ? 'Clear custom music' : '清除自定义音乐'}</button><button class="btn primary sm" type="button" data-modal-close>${en ? 'Close' : '关闭'}</button></div>
     </div>`, en ? 'Match Music' : '比赛音乐');
     $$('[data-match-music-key]').forEach((input) => {
@@ -4215,23 +4255,6 @@
       startMatchAudio(getGame().mode === 'peak');
       openMatchMusicModal();
     });
-  }
-
-  function announceMatchAction(action, hero) {
-    if (!state.matchMode || !state.matchSound || !('speechSynthesis' in window)) return;
-    const en = state.lang === 'en';
-    const side = action.side === 'blue' ? (en ? 'Blue side' : '蓝方') : (en ? 'Red side' : '红方');
-    const verb = action.type === 'ban' ? (en ? 'bans' : '禁用') : (en ? 'picks' : '选择');
-    const text = en ? `${side} ${verb} ${hero.name}` : `${side}${verb}${hero.name}`;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = en ? 'en-US' : 'zh-CN';
-      utterance.rate = 1.03;
-      utterance.pitch = 0.92;
-      utterance.volume = 0.85;
-      window.speechSynthesis.speak(utterance);
-    } catch (_) { /* speech is optional */ }
   }
 
   function syncMatchClock(action) {
@@ -4392,7 +4415,6 @@
     saveDrafts();
     renderDraftDynamic();
     announce(`${action.side === 'blue' ? '蓝方' : '红方'}${action.type === 'ban' ? '禁用' : '选择'}${hero.name}`);
-    if (state.matchMode) announceMatchAction(action, hero);
     if (gameIsComplete(game)) {
       toast(game.mode === 'peak' ? '巅峰对决盲选完成' : '本局 BP 完成，可进入下一局', 'success');
     }
