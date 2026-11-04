@@ -8,7 +8,7 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.3.1';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
@@ -20,6 +20,22 @@
   const heroAlphaCompare = (a, b) => HERO_NAME_COLLATOR.compare(a.name, b.name) || a.id - b.id;
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.3.1',
+      date: '2026-11-05',
+      zh: [
+        '比赛模式英雄选择改为覆盖在 BP 界面上的全屏选择层',
+        '新增 2026 年度总决赛金色动态背景和比赛 HUD 动效',
+        '比赛音乐支持选择本地《王者世冠（小玖 remix）》与《冠军杯》音频',
+        '保留 30 秒倒计时、自动选人、禁回退、首字母排序和英雄语音'
+      ],
+      en: [
+        'Match Mode now overlays a full-screen hero picker on the BP interface',
+        'Added an animated 2026 Grand Finals gold backdrop and match HUD effects',
+        'Local audio files can be assigned to Global BP and Peak Showdown',
+        '30-second timer, auto-pick, locked undo, alphabetical sorting and hero voice remain'
+      ]
+    },
     {
       version: '1.3.0',
       date: '2026-11-05',
@@ -763,6 +779,8 @@
     matchAudio: null,
     matchSound: true,
     matchAutoBusy: false,
+    matchMusicUrls: { global: '', peak: '' },
+    matchMusicNames: { global: '', peak: '' },
     season: SEASONS[0],
     heroMap: new Map(),
     yuanliuIds: new Set(),
@@ -2350,7 +2368,9 @@
         if (state.matchSound) startMatchAudio(getGame().mode === 'peak');
         else stopMatchAudio();
         renderMatchHud();
+        return;
       }
+      if (event.target.closest('[data-match-music]')) openMatchMusicModal();
     });
     window.addEventListener('hashchange', () => {
       const next = parseHash();
@@ -3691,6 +3711,11 @@
     const coach = $('.coach-panel');
     const grid = $('#heroGrid');
     if (!pool || !coach || !grid) return;
+    if (state.matchMode) {
+      pool.style.height = '';
+      grid.style.height = '';
+      return;
+    }
     if (window.innerWidth <= 1120) {
       pool.style.height = '';
       grid.style.height = '';
@@ -4029,6 +4054,7 @@
       <div class="match-hud-stage">G${game.no} / BO${series.bo} · ${series.s1}:${series.s2}</div>
       <div class="match-hud-tools">
         <button type="button" data-match-sound>${soundLabel}</button>
+        <button type="button" data-match-music>${en ? 'Music' : '音乐'}</button>
         <button type="button" data-match-exit>${exitLabel}</button>
       </div>
     </div>
@@ -4058,11 +4084,16 @@
     if (!audio) return;
     if (audio.interval) window.clearInterval(audio.interval);
     try {
-      audio.oscillators.forEach((oscillator) => {
-        try { oscillator.stop(); } catch (_) { /* already stopped */ }
-      });
-      audio.ctx.close();
-    } catch (_) { /* audio context may already be closed */ }
+      if (audio.file) {
+        audio.file.pause();
+        audio.file.src = '';
+      } else {
+        audio.oscillators.forEach((oscillator) => {
+          try { oscillator.stop(); } catch (_) { /* already stopped */ }
+        });
+        audio.ctx.close();
+      }
+    } catch (_) { /* audio may already be closed */ }
     state.matchAudio = null;
   }
 
@@ -4070,6 +4101,17 @@
     if (!state.matchMode || !state.matchSound) return;
     if (state.matchAudio?.peak === peak) return;
     stopMatchAudio();
+    const customUrl = state.matchMusicUrls[peak ? 'peak' : 'global'];
+    if (customUrl) {
+      try {
+        const file = new Audio(customUrl);
+        file.loop = true;
+        file.volume = 0.45;
+        file.play().catch(() => {});
+        state.matchAudio = { file, peak, oscillators: [], ctx: null, interval: null };
+        return;
+      } catch (_) { /* fall through to generated track */ }
+    }
     const AudioCtor = matchAudioApi();
     if (!AudioCtor) return;
     try {
@@ -4116,6 +4158,48 @@
     } catch (_) {
       state.matchAudio = null;
     }
+  }
+
+  function openMatchMusicModal() {
+    const en = state.lang === 'en';
+    const fileName = (key, fallback) => state.matchMusicNames[key] || fallback;
+    showModal(`<div class="modal-body match-music-modal">
+      <div class="import-head"><div><div class="eyebrow">MATCH AUDIO</div><h2>${en ? 'Match Music' : '比赛音乐'}</h2><p>${en ? 'Choose legally obtained local audio files. The app does not bundle official KPL recordings.' : '请选择你已合法获得的本地音频文件；软件不内置 KPL 官方版权录音。'}</p></div></div>
+      <div class="match-music-row">
+        <div><b>${en ? 'Global BP' : '全局 BP'}</b><small>${esc(fileName('global', en ? 'Built-in generated cue' : '未选择（使用内置合成音效）'))}</small></div>
+        <label class="btn ghost sm">${en ? 'Choose file' : '选择音频'}<input type="file" accept="audio/*" data-match-music-key="global" hidden /></label>
+      </div>
+      <div class="match-music-row">
+        <div><b>${en ? 'Peak Showdown' : '巅峰对决'}</b><small>${esc(fileName('peak', en ? 'Built-in generated cue' : '未选择（使用内置合成音效）'))}</small></div>
+        <label class="btn ghost sm">${en ? 'Choose file' : '选择音频'}<input type="file" accept="audio/*" data-match-music-key="peak" hidden /></label>
+      </div>
+      <div class="match-music-note">${en ? 'Recommended tracks: “王者世冠（小玖 remix）” for Global BP and “冠军杯” for Peak Showdown. Use files you already own.' : '建议曲目：全局 BP 使用《王者世冠（小玖 remix）》，巅峰对决使用《冠军杯》。请使用你已合法拥有的音频文件。'}</div>
+      <div class="update-actions"><button class="btn ghost sm" type="button" data-match-music-clear>${en ? 'Clear custom music' : '清除自定义音乐'}</button><button class="btn primary sm" type="button" data-modal-close>${en ? 'Close' : '关闭'}</button></div>
+    </div>`, en ? 'Match Music' : '比赛音乐');
+    $$('[data-match-music-key]').forEach((input) => {
+      input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        const key = input.dataset.matchMusicKey;
+        if (!file || !key) return;
+        if (state.matchMusicUrls[key]?.startsWith('blob:')) URL.revokeObjectURL(state.matchMusicUrls[key]);
+        state.matchMusicUrls[key] = URL.createObjectURL(file);
+        state.matchMusicNames[key] = file.name;
+        stopMatchAudio();
+        startMatchAudio(getGame().mode === 'peak');
+        toast(en ? `Loaded ${file.name}` : `已载入 ${file.name}`, 'success');
+        openMatchMusicModal();
+      });
+    });
+    $('[data-match-music-clear]')?.addEventListener('click', () => {
+      Object.values(state.matchMusicUrls).forEach((url) => {
+        if (url?.startsWith('blob:')) URL.revokeObjectURL(url);
+      });
+      state.matchMusicUrls = { global: '', peak: '' };
+      state.matchMusicNames = { global: '', peak: '' };
+      stopMatchAudio();
+      startMatchAudio(getGame().mode === 'peak');
+      openMatchMusicModal();
+    });
   }
 
   function announceMatchAction(action, hero) {
@@ -4168,6 +4252,12 @@
 
   function syncMatchMode() {
     document.body.classList.toggle('match-mode', state.matchMode);
+    const backdrop = $('#matchBackdrop');
+    if (backdrop) backdrop.hidden = !state.matchMode;
+    const activeAction = state.matchMode && state.view === 'draft' && canEditCurrentGame()
+      ? currentAction(getDraft())
+      : null;
+    document.body.classList.toggle('match-picking', Boolean(activeAction));
     const button = $('#matchModeToggle');
     if (button) {
       const en = state.lang === 'en';
