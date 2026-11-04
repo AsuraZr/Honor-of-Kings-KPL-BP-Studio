@@ -4,8 +4,8 @@
 
 **Honor of Kings KPL-BP-Studio** is a local Ban/Pick analysis workbench for the Honor of Kings KPL professional league. It covers the 2026 Grand Finals, the 2026 KPL Summer Split, and combined two-season data, including hero ban/pick/win rates, team records, synergy probabilities, coach-side BP modeling, and incremental synchronization from the official Tencent match API.
 
-- **Version:** v1.3.0
-- **Latest update:** Match Mode adds hidden analysis panels, a 30-second Ban/Pick timer with automatic first-role picks, locked BP history, alphabetical hero sorting, a broadcast HUD, match audio and hero voice calls.
+- **Version:** v1.3.1
+- **Latest update:** Match Mode overlays a full-screen hero picker on a dynamic 2026 Grand Finals gold backdrop, with local audio assignment for Global BP and Peak Showdown.
 - **GitHub:** <https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
 - **Official KPL live page:** <https://kpl.qq.com/>
 - **Update fallback:** <https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
@@ -24,9 +24,9 @@
 
 当前随包快照：**176 场系列赛 / 721 局 BP / 133 位英雄 / 18 支战队**，数据覆盖至 2026-10-22 18:00。
 
-**版本：v1.3.0**
+**版本：v1.3.1**
 
-- 最新更新：新增比赛模式，隐藏教练席/阵容胜率/选手数据，30 秒 Ban&Pick 倒计时自动选择剩余分路首位英雄，禁止回退，英雄首字母排序，退出立即停止倒计时并保留 BP；新增比赛 HUD、比赛音效和英雄语音播报。
+- 最新更新：比赛模式改为全屏英雄选择层叠加在 BP 界面上，新增 2026 年度总决赛金色动态背景和比赛 HUD 动效；可在比赛 HUD 中选择本地《王者世冠（小玖 remix）》与《冠军杯》音频。
 - GitHub 仓库：<https://github.com/AsuraZr/Honor-of-Kings-KPL-BP-Studio>
 - KPL 官方直播：<https://kpl.qq.com/>
 - 软件顶部“检查更新”会读取 GitHub 最新 Release；如无法更新，请点击备用链接：<https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1>
