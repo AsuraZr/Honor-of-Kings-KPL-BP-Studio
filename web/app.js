@@ -8,15 +8,36 @@
   const ALL = 'ALL';
   const SEASONS = ['KPL2026S3', 'KPL2026S2'];
   const VIEWS = new Set(['draft', 'heroes', 'pairs', 'teams', 'source']);
-  const APP_VERSION = '1.2.10';
+  const APP_VERSION = '1.3.0';
   const GITHUB_OWNER = 'AsuraZr';
   const GITHUB_REPO = 'Honor-of-Kings-KPL-BP-Studio';
   const GITHUB_REPO_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`;
   const UPDATE_API_URL = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
   const UPDATE_FALLBACK_URL = 'https://www.bilibili.com/video/BV1bsn26NEDN/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e1276fab5b80acf4751c3ea7650850a1';
   const KPL_LIVE_URL = 'https://kpl.qq.com/';
+  const MATCH_TURN_MS = 30000;
+  const HERO_NAME_COLLATOR = new Intl.Collator('zh-Hans-CN', { usage: 'sort', sensitivity: 'base' });
+  const heroAlphaCompare = (a, b) => HERO_NAME_COLLATOR.compare(a.name, b.name) || a.id - b.id;
   const CHANGELOG_SEEN_KEY = 'kpl.changelogSeenVersion';
   const VERSION_HISTORY = [
+    {
+      version: '1.3.0',
+      date: '2026-11-05',
+      zh: [
+        '新增比赛模式开关，隐藏教练席、阵容胜率和英雄选手数据',
+        '新增 30 秒 Ban/Pick 倒计时，结束自动选择剩余分路首位英雄',
+        '比赛模式禁止撤销、换人、重置和导入 BP，英雄池按首字母排序',
+        '退出比赛模式立即停止倒计时，BP 英雄完整保留',
+        '新增比赛动态 HUD、全局 BP / 巅峰对决比赛音效与英雄语音播报'
+      ],
+      en: [
+        'Added Match Mode with coach, lineup-rate and player-data panels hidden',
+        'Added a 30-second Ban/Pick timer with automatic first-role hero selection',
+        'Undo, hero swaps, resets and imports are locked in Match Mode; heroes sort alphabetically',
+        'Leaving Match Mode stops the timer immediately while preserving every BP pick',
+        'Added a dynamic match HUD, Global BP / Peak Showdown music and hero voice calls'
+      ]
+    },
     {
       version: '1.2.10',
       date: '2026-10-28',
@@ -737,6 +758,11 @@
     view: 'draft',
     lang: 'zh',
     changelogOpen: false,
+    matchMode: false,
+    matchClock: null,
+    matchAudio: null,
+    matchSound: true,
+    matchAutoBusy: false,
     season: SEASONS[0],
     heroMap: new Map(),
     yuanliuIds: new Set(),
@@ -987,6 +1013,8 @@
     if (hashView) state.view = hashView;
     else if (VIEWS.has(saved.view)) state.view = saved.view;
     if (saved.lang === 'en' || saved.lang === 'zh') state.lang = saved.lang;
+    if (typeof saved.matchMode === 'boolean') state.matchMode = saved.matchMode;
+    if (typeof saved.matchSound === 'boolean') state.matchSound = saved.matchSound;
     if (saved.season === ALL || SEASONS.includes(saved.season)) state.season = saved.season;
     if (state.season !== ALL) {
       state.standingsSeason = state.season;
@@ -1012,6 +1040,8 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         view: state.view,
         lang: state.lang,
+        matchMode: state.matchMode,
+        matchSound: state.matchSound,
         season: state.season,
         drafts: state.drafts,
         heroTableSort: state.heroTableSort,
@@ -2052,6 +2082,7 @@
     }
     applyLanguage(document.body);
     renderLanguageToggle();
+    syncMatchMode();
   }
 
   /* ---------------------------------------------------------
@@ -2307,6 +2338,20 @@
     });
     $('#checkUpdateBtn')?.addEventListener('click', () => checkAppUpdate());
     $('#langToggle')?.addEventListener('click', () => setLanguage(state.lang === 'en' ? 'zh' : 'en'));
+    $('#matchModeToggle')?.addEventListener('click', () => setMatchMode(!state.matchMode));
+    $('#matchHud')?.addEventListener('click', (event) => {
+      if (event.target.closest('[data-match-exit]')) {
+        setMatchMode(false);
+        return;
+      }
+      if (event.target.closest('[data-match-sound]')) {
+        state.matchSound = !state.matchSound;
+        persistPrefs();
+        if (state.matchSound) startMatchAudio(getGame().mode === 'peak');
+        else stopMatchAudio();
+        renderMatchHud();
+      }
+    });
     window.addEventListener('hashchange', () => {
       const next = parseHash();
       if (next && next !== state.view) {
@@ -2684,6 +2729,10 @@
   }
 
   function resetSeries() {
+    if (state.matchMode) {
+      toast('比赛模式不能重置系列赛 BP', 'info');
+      return;
+    }
     if (isReviewingDraft()) {
       toast('正在回看历史小局，请先返回当前局再重置系列赛', 'info');
       return;
@@ -3683,7 +3732,9 @@
       if (sort === 'pick') return stats.pickRate || 0;
       return statsPresence(stats);
     };
-    heroes = heroes.sort((a, b) => value(b) - value(a) || a.id - b.id);
+    heroes = state.matchMode
+      ? heroes.sort(heroAlphaCompare)
+      : heroes.sort((a, b) => value(b) - value(a) || a.id - b.id);
 
     const count = $('#poolCount');
     if (count) count.textContent = `${heroes.length} / ${state.data.heroes.length} 位`;
@@ -3702,7 +3753,7 @@
           ? '巅峰对决 BP 完成 · 可点击已选头像换英雄'
           : `巅峰对决 · 无 Ban · 双方盲选 · 蓝 ${blueCount}/5 · 红 ${redCount}/5`;
       } else if (action) {
-        meta.textContent = `${sideLabel}${action.type === 'ban' ? '禁用' : '选人'} · ${phaseLabel(game.step)} · 全局 BP 已锁定己方历史选用`;
+        meta.textContent = `${sideLabel}${action.type === 'ban' ? '禁用' : '选人'} · ${phaseLabel(game.step)}${state.matchMode ? ' · 比赛模式 · 首字母排序' : ' · 全局 BP 已锁定己方历史选用'}`;
       } else {
         meta.textContent = '本局 BP 已完成 · 可点击已选头像换英雄，或选择胜方';
       }
@@ -3719,14 +3770,17 @@
         ? heroAvailability(hero.id, action.side, action.type, series, game)
         : completedHeroState(hero.id, series, game);
       const rec = recMap.get(hero.id);
-      const isRec = Boolean(rec && rec.rank <= 8 && !availability.disabled);
+      const isRec = !state.matchMode && Boolean(rec && rec.rank <= 8 && !availability.disabled);
       const roleName = heroRoles(hero)[0];
       const miniTags = availability.labels
         .filter((label) => label !== availability.mainLabel)
         .slice(0, 2)
         .map((label) => `<span class="hero-mini-tag">${esc(label)}</span>`)
         .join('');
-      return `<button type="button" class="hero-card avatar-card ${isRec ? 'is-rec' : ''} ${availability.disabled ? 'is-used' : ''}" data-hero-id="${hero.id}" ${availability.disabled ? 'data-unavailable="1"' : ''} title="${esc(hero.name)} · ${esc(roleName)} · Ban ${pct(stats.banRate)} · Pick ${pct(stats.pickRate)} · 胜率 ${pct(stats.winRate)}">
+      const heroTitle = state.matchMode
+        ? `${hero.name} · ${roleName}`
+        : `${hero.name} · ${roleName} · Ban ${pct(stats.banRate)} · Pick ${pct(stats.pickRate)} · 胜率 ${pct(stats.winRate)}`;
+      return `<button type="button" class="hero-card avatar-card ${isRec ? 'is-rec' : ''} ${availability.disabled ? 'is-used' : ''}" data-hero-id="${hero.id}" ${availability.disabled ? 'data-unavailable="1"' : ''} title="${esc(heroTitle)}">
         <span class="hero-avatar">
           ${heroImage(hero, '', hero.name)}
           <span class="avatar-role ${roleClass(roleName)}">${esc(roleName)}</span>
@@ -3886,7 +3940,275 @@
     renderDraftGrid();
     renderDraftAnalysis();
     applyLanguage($('#draftPage'));
+    syncMatchMode();
     window.requestAnimationFrame(syncDraftPoolHeight);
+  }
+
+  function matchActionKey(action, series, game) {
+    return action
+      ? `${series.id}:${game.no}:${action.side}:${action.type}:${game.step}:${game.mode}`
+      : '';
+  }
+
+  function clearMatchClock() {
+    if (state.matchClock?.interval) window.clearInterval(state.matchClock.interval);
+    state.matchClock = null;
+    renderMatchHud();
+  }
+
+  function matchAutoHero(action) {
+    const series = getSeries();
+    const game = getGame();
+    const available = state.data.heroes
+      .filter((hero) => !heroAvailability(hero.id, action.side, action.type, series, game).disabled)
+      .sort(heroAlphaCompare);
+    if (!available.length) return null;
+    if (action.type === 'pick') {
+      const picks = game[action.side].picks.filter(Boolean);
+      const filledRoles = new Set(
+        picks.flatMap((heroId) => heroRoles(state.heroMap.get(Number(heroId)) || {}))
+      );
+      const nextRole = ROLE_ORDER.find((role) => !filledRoles.has(role));
+      if (nextRole) {
+        const roleHeroes = available.filter((hero) => heroRoles(hero).includes(nextRole));
+        if (roleHeroes.length) return roleHeroes[0];
+      }
+    }
+    return available[0];
+  }
+
+  function runMatchTimeout() {
+    if (!state.matchMode || state.matchAutoBusy) return;
+    const action = canEditCurrentGame() ? currentAction(getDraft()) : null;
+    if (!action) {
+      clearMatchClock();
+      return;
+    }
+    state.matchAutoBusy = true;
+    const hero = matchAutoHero(action);
+    if (hero) {
+      pickHero(hero.id);
+      toast(`倒计时结束，自动${action.type === 'ban' ? '禁用' : '选择'} ${hero.name}`, 'info', 3500);
+    } else {
+      toast('倒计时结束，但没有可用英雄', 'error');
+      clearMatchClock();
+    }
+    state.matchAutoBusy = false;
+  }
+
+  function renderMatchHud() {
+    const hud = $('#matchHud');
+    if (!hud) return;
+    if (!state.matchMode || state.view !== 'draft' || !state.data) {
+      hud.hidden = true;
+      hud.innerHTML = '';
+      return;
+    }
+    const series = getSeries();
+    const game = getGame();
+    const teams = gameTeams(series, game);
+    const action = canEditCurrentGame() ? currentAction(getDraft()) : null;
+    const clock = state.matchClock;
+    const remaining = clock ? Math.max(0, clock.deadline - Date.now()) : 0;
+    const seconds = clock ? Math.max(0, Math.ceil(remaining / 1000)) : 0;
+    const progress = clock ? Math.max(0, Math.min(100, (remaining / MATCH_TURN_MS) * 100)) : 0;
+    const urgent = Boolean(clock && remaining <= 5000);
+    const phaseLabelText = game.mode === 'peak' ? 'PEAK SHOWDOWN' : 'GLOBAL BP';
+    const en = state.lang === 'en';
+    const actionText = action
+      ? `${action.side === 'blue' ? 'BLUE' : 'RED'} · ${action.type === 'ban' ? 'BAN' : 'PICK'}`
+      : 'BP COMPLETE';
+    const soundLabel = en ? (state.matchSound ? 'Sound ON' : 'Sound OFF') : (state.matchSound ? '音效 开' : '音效 关');
+    const exitLabel = en ? 'Exit match mode' : '退出比赛模式';
+    const autoLabel = en ? 'Auto-picks when the timer ends' : '倒计时结束自动选择';
+    const completeLabel = en ? 'Draft complete' : '本局 BP 已结束';
+    hud.hidden = false;
+    hud.className = `match-hud ${urgent ? 'is-urgent' : ''} ${game.mode === 'peak' ? 'is-peak' : ''}`;
+    hud.innerHTML = `<div class="match-hud-bar">
+      <div class="match-hud-brand"><span class="match-live-dot"></span> KPL MATCH MODE <b>${phaseLabelText}</b></div>
+      <div class="match-hud-stage">G${game.no} / BO${series.bo} · ${series.s1}:${series.s2}</div>
+      <div class="match-hud-tools">
+        <button type="button" data-match-sound>${soundLabel}</button>
+        <button type="button" data-match-exit>${exitLabel}</button>
+      </div>
+    </div>
+    <div class="match-hud-main">
+      <div class="match-hud-team blue">
+        <span>${esc(teamName(teams.blue))}</span>
+        <b>${esc(String(series.s1 ?? 0))}</b>
+      </div>
+      <div class="match-hud-clock" style="--match-progress:${progress}%">
+        <div class="match-clock-ring"><strong>${clock ? seconds : '—'}</strong><small>SEC</small></div>
+        <div class="match-clock-copy"><em>${actionText}</em><small>${clock ? autoLabel : completeLabel}</small></div>
+      </div>
+      <div class="match-hud-team red">
+        <b>${esc(String(series.s2 ?? 0))}</b>
+        <span>${esc(teamName(teams.red))}</span>
+      </div>
+    </div>`;
+    applyLanguage(hud);
+  }
+
+  function matchAudioApi() {
+    return window.AudioContext || window.webkitAudioContext || null;
+  }
+
+  function stopMatchAudio() {
+    const audio = state.matchAudio;
+    if (!audio) return;
+    if (audio.interval) window.clearInterval(audio.interval);
+    try {
+      audio.oscillators.forEach((oscillator) => {
+        try { oscillator.stop(); } catch (_) { /* already stopped */ }
+      });
+      audio.ctx.close();
+    } catch (_) { /* audio context may already be closed */ }
+    state.matchAudio = null;
+  }
+
+  function startMatchAudio(peak) {
+    if (!state.matchMode || !state.matchSound) return;
+    if (state.matchAudio?.peak === peak) return;
+    stopMatchAudio();
+    const AudioCtor = matchAudioApi();
+    if (!AudioCtor) return;
+    try {
+      const ctx = new AudioCtor();
+      const master = ctx.createGain();
+      master.gain.value = 0.065;
+      master.connect(ctx.destination);
+      const oscillators = [];
+      const drone = (frequency, type = 'sine', gainValue = 0.18) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = frequency;
+        gain.gain.value = gainValue;
+        osc.connect(gain).connect(master);
+        osc.start();
+        oscillators.push(osc);
+      };
+      drone(peak ? 98 : 82, 'sawtooth', 0.12);
+      drone(peak ? 196 : 123.47, 'sine', 0.18);
+      const notes = peak
+        ? [261.63, 329.63, 392.0, 523.25, 392.0, 329.63]
+        : [146.83, 174.61, 220.0, 174.61, 196.0, 146.83];
+      let noteIndex = 0;
+      const playNote = () => {
+        if (!state.matchAudio || !state.matchMode) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = peak ? 'triangle' : 'square';
+        osc.frequency.value = notes[noteIndex % notes.length];
+        noteIndex += 1;
+        const now = ctx.currentTime;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.09, now + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + (peak ? 0.26 : 0.34));
+        osc.connect(gain).connect(master);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      };
+      playNote();
+      const interval = window.setInterval(playNote, peak ? 420 : 560);
+      state.matchAudio = { ctx, master, oscillators, interval, peak };
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    } catch (_) {
+      state.matchAudio = null;
+    }
+  }
+
+  function announceMatchAction(action, hero) {
+    if (!state.matchMode || !state.matchSound || !('speechSynthesis' in window)) return;
+    const en = state.lang === 'en';
+    const side = action.side === 'blue' ? (en ? 'Blue side' : '蓝方') : (en ? 'Red side' : '红方');
+    const verb = action.type === 'ban' ? (en ? 'bans' : '禁用') : (en ? 'picks' : '选择');
+    const text = en ? `${side} ${verb} ${hero.name}` : `${side}${verb}${hero.name}`;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = en ? 'en-US' : 'zh-CN';
+      utterance.rate = 1.03;
+      utterance.pitch = 0.92;
+      utterance.volume = 0.85;
+      window.speechSynthesis.speak(utterance);
+    } catch (_) { /* speech is optional */ }
+  }
+
+  function syncMatchClock(action) {
+    if (!state.matchMode || state.view !== 'draft' || !action) {
+      clearMatchClock();
+      return;
+    }
+    const series = getSeries();
+    const game = getGame();
+    const key = matchActionKey(action, series, game);
+    if (state.matchClock?.key === key && state.matchClock.deadline > Date.now()) {
+      renderMatchHud();
+      return;
+    }
+    if (state.matchClock?.interval) window.clearInterval(state.matchClock.interval);
+    state.matchClock = {
+      key,
+      deadline: Date.now() + MATCH_TURN_MS,
+      interval: window.setInterval(() => {
+        if (!state.matchMode) {
+          clearMatchClock();
+          return;
+        }
+        if (Date.now() >= state.matchClock.deadline) {
+          runMatchTimeout();
+        } else {
+          renderMatchHud();
+        }
+      }, 200)
+    };
+    renderMatchHud();
+  }
+
+  function syncMatchMode() {
+    document.body.classList.toggle('match-mode', state.matchMode);
+    const button = $('#matchModeToggle');
+    if (button) {
+      const en = state.lang === 'en';
+      button.classList.toggle('is-active', state.matchMode);
+      button.textContent = en
+        ? (state.matchMode ? 'Exit Match Mode' : 'Match Mode')
+        : (state.matchMode ? '退出比赛模式' : '比赛模式');
+      button.title = en
+        ? (state.matchMode ? 'Exit match mode' : 'Enable match mode')
+        : (state.matchMode ? '退出比赛模式' : '开启比赛模式');
+    }
+    if (!state.matchMode) {
+      clearMatchClock();
+      stopMatchAudio();
+      renderMatchHud();
+      return;
+    }
+    if (state.view !== 'draft') {
+      clearMatchClock();
+      stopMatchAudio();
+      renderMatchHud();
+      return;
+    }
+    const game = getGame();
+    if (state.matchSound) startMatchAudio(game.mode === 'peak');
+    else stopMatchAudio();
+    const action = canEditCurrentGame() ? currentAction(getDraft()) : null;
+    syncMatchClock(action);
+    renderMatchHud();
+  }
+
+  function setMatchMode(enabled) {
+    state.matchMode = Boolean(enabled);
+    persistPrefs();
+    if (!state.matchMode) {
+      clearMatchClock();
+      stopMatchAudio();
+    } else {
+      startMatchAudio(getGame().mode === 'peak');
+    }
+    renderDraftDynamic();
   }
 
   function choosePickSlot(sideData) {
@@ -3965,6 +4287,7 @@
     saveDrafts();
     renderDraftDynamic();
     announce(`${action.side === 'blue' ? '蓝方' : '红方'}${action.type === 'ban' ? '禁用' : '选择'}${hero.name}`);
+    if (state.matchMode) announceMatchAction(action, hero);
     if (gameIsComplete(game)) {
       toast(game.mode === 'peak' ? '巅峰对决盲选完成' : '本局 BP 完成，可进入下一局', 'success');
     }
@@ -4043,6 +4366,10 @@
   }
 
   function openSwapHeroModal(side, type, slot) {
+    if (state.matchMode) {
+      toast('比赛模式不能回退或更换已选英雄', 'info');
+      return;
+    }
     if (!canEditCurrentGame()) {
       toast('当前 BP 已锁定或正在回看，不能修改英雄', 'info');
       return;
@@ -4121,6 +4448,10 @@
   }
 
   function undoDraft() {
+    if (state.matchMode) {
+      toast('比赛模式不能回退英雄选择', 'info');
+      return;
+    }
     if (!canEditCurrentGame()) {
       toast('当前 BP 已锁定或正在回看，不能撤销', 'info');
       return;
@@ -4148,6 +4479,10 @@
   }
 
   function unlockCurrentGame() {
+    if (state.matchMode) {
+      toast('比赛模式不能回退已锁定 BP', 'info');
+      return;
+    }
     if (isReviewingDraft()) {
       toast('正在回看历史小局，请先返回当前局', 'info');
       return;
@@ -4176,6 +4511,10 @@
   }
 
   function resetDraft() {
+    if (state.matchMode) {
+      toast('比赛模式不能重置当前 BP', 'info');
+      return;
+    }
     if (isReviewingDraft()) {
       toast('正在回看历史小局，请先返回当前局再重置本局', 'info');
       return;
@@ -4671,6 +5010,10 @@
   }
 
   function openImportDraftModal() {
+    if (state.matchMode) {
+      toast('比赛模式不能导入覆盖当前 BP', 'info');
+      return;
+    }
     if (!canEditCurrentGame()) {
       toast('当前 BP 已锁定或正在回看，不能导入覆盖', 'info');
       return;
@@ -6196,6 +6539,10 @@
   }
 
   function openHeroModal(heroId, teamId = null) {
+    if (state.matchMode) {
+      toast('比赛模式已隐藏选手数据', 'info');
+      return;
+    }
     const hero = state.heroMap.get(Number(heroId));
     if (!hero) return;
     state.heroReturnTo = state.seriesModal
