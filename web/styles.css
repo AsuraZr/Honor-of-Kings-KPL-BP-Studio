@@ -2045,3 +2045,47 @@ body.match-mode .hero-card { cursor: crosshair; }
   .match-clock-ring strong { font-size: 20px; }
   .match-hud-brand b { display: none; }
 }
+
+/* Dynamic finals backdrop and full-screen B/P picker */
+.match-backdrop {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 18%, rgba(255,225,160,.30), transparent 42%),
+    radial-gradient(ellipse at 10% 80%, rgba(194,137,48,.22), transparent 48%),
+    linear-gradient(145deg, #0b0d12 0%, #1a140b 46%, #080a0f 100%);
+}
+.match-backdrop::before,
+.match-backdrop::after {
+  content: ""; position: absolute; inset: -35%;
+  background:
+    conic-gradient(from 20deg at 50% 50%, transparent 0 12%, rgba(255,215,130,.08) 18%, transparent 27% 52%, rgba(255,225,160,.10) 60%, transparent 72%),
+    repeating-linear-gradient(118deg, transparent 0 44px, rgba(255,220,150,.035) 45px 47px, transparent 48px 90px);
+  filter: blur(22px); animation: matchBackdropTurn 38s linear infinite;
+}
+.match-backdrop::after { animation-direction: reverse; animation-duration: 55s; opacity: .55; }
+@keyframes matchBackdropTurn { to { transform: rotate(360deg); } }
+body.match-mode .bg-grid, body.match-mode .bg-glow { display: none; }
+body.match-mode #app { position: relative; z-index: 1; }
+body.match-picking .draft-main {
+  position: fixed; top: 92px; left: 18px; right: 18px; bottom: 12px; z-index: 60;
+  display: block; margin: 0; padding: 0;
+}
+body.match-picking .draft-main > .pool-panel {
+  height: 100%; display: flex; flex-direction: column; overflow: hidden;
+  background: linear-gradient(145deg, rgba(8,11,17,.97), rgba(20,17,12,.96));
+  border: 1px solid rgba(231,185,105,.42);
+  box-shadow: 0 18px 80px rgba(0,0,0,.55), inset 0 0 60px rgba(231,185,105,.035);
+}
+body.match-picking .draft-main > .pool-panel .hero-grid { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; }
+body.match-picking .draft-main > .coach-panel { display: none; }
+.match-music-modal .match-music-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 9px; padding: 10px 12px; border: 1px solid var(--line-soft); border-radius: 8px;
+  background: rgba(255,255,255,.018);
+}
+.match-music-modal .match-music-row b { display: block; font-size: 11px; }
+.match-music-modal .match-music-row small { display: block; margin-top: 3px; color: var(--dim); font-size: 8.5px; }
+.match-music-modal .match-music-note { margin-top: 12px; padding: 9px 10px; border-left: 2px solid var(--gold); background: rgba(231,185,105,.06); color: var(--muted); font-size: 9px; line-height: 1.6; }
+@media (max-width: 760px) {
+  body.match-picking .draft-main { top: 86px; left: 7px; right: 7px; bottom: 7px; }
+}
